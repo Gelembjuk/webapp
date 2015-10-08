@@ -14,13 +14,17 @@
 <h2>Gelembjuk/WebApp usage example</h2>
 </div>
 
+{if $message != ''}
+<div style="color:red;padding:30px;">{$message}</div>
+{/if}
+
 <div>
 	<a href="{link}">Home</a>
 	<a href="{link view="form"}">Contact</a>
 	<a href="{link view='data'}">Data</a>
 </div>
 
-{$INNERCONTENT}
+{$INNERCONTENTS}
 
 <div>
 	<hr>

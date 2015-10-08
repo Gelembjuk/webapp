@@ -2,11 +2,12 @@
 
 <p>Some array output</p>
 <ul>
-{foreach from=$myarray item=arrayitem}
-<li>{$arrayitem}</li>
+{foreach from=$data item=user}
+<li>{$user.name} ({$user.email})</li>
 {/foreach}
 </ul>
 
-<p>This is Page 3</p>
+<p>Same data in <a href="{link view='data' responseformat='json'}">JSON</a> format</p>
+<p>Same data in <a href="{link view='data' responseformat='xml'}">XML</a> format</p>
 
 </div>
