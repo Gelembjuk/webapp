@@ -1,0 +1,7 @@
+
+examples/vendor
+examples/vendor/*
+
+examples/tmp/templates_c/
+examples/tmp/templates_c/*
+examples/tmp/log.txt
