@@ -7,6 +7,7 @@
 		"gelembjuk/templating":"1.*",
 		"gelembjuk/mail":"1.*",
 		"gelembjuk/locale":"1.*",
+		"openlss/lib-array2xml":"*",
 		"gelembjuk/db":"1.*"
     },
     "require-dev":{},
