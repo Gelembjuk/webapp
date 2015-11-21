@@ -18,8 +18,21 @@ class JSON extends Display {
 	public function display() {
 		$this->requireSettings();
 		
+		$responsecode = 200;
+	
+		if ($this->data['errorcode'] != '') {
+			$responsecode = $this->data['errorcode'];
+		} elseif ($this->data['statuscode'] != '') {
+			$responsecode = $this->data['statuscode'];
+		}
+
 		$displaydata = $this->prepareResponseStructure();
 		
+		if ($responsecode != 200) {
+			$http = new HTTP();
+			$message = $http->getMessageForCode($responsecode);
+			header("HTTP/1.0 ".$responsecode." ".$message);
+		}
 		header('Content-Type: application/json; charset=utf-8');
 		echo json_encode($displaydata);
 		return true;
