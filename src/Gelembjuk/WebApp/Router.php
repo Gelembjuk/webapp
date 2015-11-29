@@ -12,6 +12,7 @@ abstract class Router {
 	protected $actiontype = '';
 	protected $actionmethod = '';
 	protected $responseformat = '';
+	protected $httmmethod = 'GET';
 	protected $options;
 	protected $controllername;
 	protected $application;
@@ -21,6 +22,7 @@ abstract class Router {
 		self::$phpsessioninited = false;
 		$this->application = $application;
 		$this->options = $options;
+		$this->httmmethod = $_SERVER['REQUEST_METHOD'];
 		$this->controllername = '';
 		$this->clearInput();
 		$this->parseInput();
@@ -71,6 +73,36 @@ abstract class Router {
 		
 		return true;
 	}
+	// parse request body to input array and then read top level keys as inputs
+	public function parseBody() {
+		$contenttype = strtolower($_SERVER["CONTENT_TYPE"]);
+		
+		if (empty($contenttype)) {
+			$contenttype = strtolower($_SERVER["HTTP_CONTENT_TYPE"]);
+		}
+
+		if ($contenttyp == 'application/json') {
+			$jsondoc = $this->getRequestBody();
+
+			if ($jsondoc != '') {
+				$data = @json_decode($jsondoc,true);
+
+				if (json_last_error() == JSON_ERROR_NONE) {
+					foreach ($data as $key => $val) {
+						$this->input[$key] = $val;
+					}
+				}
+			}
+		}
+	}
+	public function getRequestBody() {
+		static $requestbody;
+
+		if (empty($requestbody)) {
+			$requestbody = file_get_contents("php://input");
+		}
+		return $requestbody;
+	}
 	public function setInput($name,$value) {
 		$this->input[$name] = $value;
 	}
@@ -92,8 +124,8 @@ abstract class Router {
 	public function getInput($name,$filter = 'string', $default = '', $maxlength = 0) {
 		
 		if ($filter == 'file') {
-			if (isset($this->files[$file])) {
-				return $this->files[$file];
+			if (isset($this->files[$name])) {
+				return $this->files[$name];
 			}
 			
 			return null;
@@ -103,6 +135,16 @@ abstract class Router {
 		
 		if (empty($v)) {
 			$v = $default;
+
+			if (isset($this->files[$name])) {
+				// load this file to memory. but check size before
+				$tmofilepath = $this->files[$name]['tmp_name'];
+				
+				// for this feature support only files less 16M
+				if (file_exists($tmofilepath) && @filesize($tmofilepath) && @filesize($tmofilepath) < 16*1024*1024) {
+					$v = @file_get_contents($tmofilepath);
+				}
+			}
 		}
 		
 		if ($filter != 'array' && $v != '' && get_magic_quotes_gpc() == 1) {
@@ -117,7 +159,17 @@ abstract class Router {
 		}
 				
 		if ($filter == 'array' && !is_array($v)) {
-			$v = array();
+			// maybe it is json. then try to recode from json
+			if (substr($v,0,1) == '{' || substr($v,0,1) == '[') {
+				$vv = @json_decode($v,true);
+
+				if (json_last_error() == JSON_ERROR_NONE && is_array($vv)) {
+					$v = $vv;
+				}
+			}
+			if (!is_array($v)) {
+				$v = array();
+			}
 		}
 		
 		if ($filter=='int' || $filter=='integer') {
@@ -183,6 +235,34 @@ abstract class Router {
 		}
 		
 		return $inputs;
+	}
+	/* returns all inputs as one hash
+	 * this function would not filter data. so use it carefully 
+	 */
+	public function getInputAsStructure($includefiles = false) {
+		$data = array();
+
+		$data = $this->input;
+
+		if ($includefiles && count($this->files) > 0) {
+			foreach ($this->files as $key => $file) {
+				// get contents of a file
+				$file['contents'] = @file_get_contents($file['tmp_name']);
+
+				if (strlen($file['contents']) > 0) {
+					unset($file['tmp_name']);
+					$data[$key] = $file;
+				}
+			}
+		}
+
+		return $data;
+	}
+	protected function getHTTPHeader($header) {
+		if (isset($_SERVER['HTTP_'.strtoupper($header)])) {
+			return $_SERVER['HTTP_'.strtoupper($header)];
+		}
+		return '';
 	}
 	protected function getRequestUrlPath(){
 		return $_SERVER['REQUEST_URI'];

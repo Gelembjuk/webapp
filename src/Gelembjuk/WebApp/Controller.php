@@ -306,7 +306,7 @@ abstract class Controller {
 				$errormessage = $this->_('Login Required');
 			}
 			
-			throw new \Exception($errormessage);
+			throw new \Exception($errormessage,401);
 		}
 	}
 	

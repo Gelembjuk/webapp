@@ -20,10 +20,12 @@ class JSON extends Display {
 		
 		$responsecode = 200;
 	
-		if ($this->data['errorcode'] != '') {
+		if ($this->data['errorcode'] > 0) {
 			$responsecode = $this->data['errorcode'];
-		} elseif ($this->data['statuscode'] != '') {
+		} elseif ($this->data['statuscode'] > 0) {
 			$responsecode = $this->data['statuscode'];
+		} elseif ($this->data['errornumber'] > 0) {
+			$responsecode = $this->data['errornumber'];
 		}
 
 		$displaydata = $this->prepareResponseStructure();

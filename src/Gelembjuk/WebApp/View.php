@@ -129,6 +129,8 @@ abstract class View {
 		
 		if ($this->viewdata['errornumber'] > 0) {
 			$this->viewstatuscode = $this->viewdata['errornumber'];
+		} elseif ($this->viewstatuscode > 0) {
+			$this->viewdata['errornumber'] = $this->viewstatuscode;
 		}
 		
 		$this->htmltemplate = 'error';
