@@ -81,7 +81,7 @@ abstract class Router {
 			$contenttype = strtolower($_SERVER["HTTP_CONTENT_TYPE"]);
 		}
 
-		if ($contenttyp == 'application/json') {
+		if ($contenttype == 'application/json') {
 			$jsondoc = $this->getRequestBody();
 
 			if ($jsondoc != '') {
