@@ -181,7 +181,7 @@ abstract class View {
 			'templatepath' => $this->options['htmltemplatespath'],
 			'templatesoptions' => $this->options['htmltemplatesoptions'],
 			'template' => $this->htmltemplate,
-			'view' => $this->getName(),
+			'view' => $this->getViewFolderName(),
 			'controller' => $this->router->getController(),
 			'outtemplate' => $this->router->getInput('outtmpl','alpha','default'),
 			'outtemplate_force' => $this->htmlouttemplate_force,
@@ -239,5 +239,8 @@ abstract class View {
 			
 			throw new \Exception($errormessage);
 		}
+	}
+	protected function getViewFolderName() {
+		return $this->getName();
 	}
 }
