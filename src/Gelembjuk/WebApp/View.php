@@ -86,7 +86,11 @@ abstract class View {
 		
 		// result is not important there. 
 		// if view throws error then it will be catched above
-		$this->$viewmethodname();
+		$result = $this->$viewmethodname();
+		
+		if ($result !== true) {
+			return $result;
+		}
 		
 		// prepare some extra data to display
 		$this->beforeDisplay();

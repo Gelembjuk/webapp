@@ -161,10 +161,27 @@ abstract class Controller {
 				// inside this method must be done everything, headers, all output
 				$result = $viewer->doView($actionmethod,$this->responseformat);
 				
+				$origactiontype = $actiontype;
+				$actiontype = '';
+				
+				if (is_array($result)) {
+					$origactionmethod = $actionmethod;
+					
+					list($actiontype,$actionmethod) = $result;
+					
+					if ($actiontype != 'redirect') {
+						$actiontype = '';
+						$actionmethod = $origactionmethod ;
+					} 
+					unset($origactionmethod );
+					$result = true;
+				}
+				
 				if ($result !== true && $result !== false) {
+					$actiontype = $origactiontype;
 					throw new \Exception('Unknown error on View action');
 				}
-				$actiontype = '';
+				
 			} catch (\Exception $exception) {
 				// when view can not be executed
 				// it throws exception
