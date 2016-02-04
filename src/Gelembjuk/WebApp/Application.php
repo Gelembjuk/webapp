@@ -112,7 +112,16 @@ abstract class Application {
 		}
 		*/
 	}
-	
+	/*
+	* To add some options after init executed
+	*/
+	public function addOption($key,$value) {
+		if (trim($key) == '') {
+			return false;
+		}
+		$this->options[$key] = $value;
+		return true;
+	}
 	public function action() {
 		// controller will be detected by router and created
 		$controller = $this->getController();
@@ -138,13 +147,17 @@ abstract class Application {
 			return $this->controllers[$controllername];
 		}
 		
+		$router = null;
+		
 		if ($controllername == '') {
-			$router = $this->getRouter();
-			$controllername = $router->getController();
-		} else {
-			$router = null;
+			if ($this->getOption('DefaultController') != '') {
+				$controllername = ucfirst($this->getOption('DefaultController'));
+			} else {
+				$router = $this->getRouter();
+				$controllername = $router->getController();
+			}
 		}
-
+		
 		$controllerpath = $this->options['controllersnamespace'].$controllername;
 		
 		if (!class_exists($controllerpath) && $this->getDefaultControllerName() != '') {

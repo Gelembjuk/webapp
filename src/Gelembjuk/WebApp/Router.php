@@ -103,6 +103,17 @@ abstract class Router {
 		}
 		return $requestbody;
 	}
+	public function parseCommandLine() {
+		global $argv, $argc;
+
+		$query = $argv[1];
+		
+		foreach (explode('&',$query) as $pair){
+			list($key,$val) = explode('=',$pair);
+			$this->input[$key] = $val;
+		}
+
+	}
 	public function setInput($name,$value) {
 		$this->input[$name] = $value;
 	}
