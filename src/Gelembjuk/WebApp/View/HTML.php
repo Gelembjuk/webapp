@@ -31,13 +31,31 @@ class HTML extends Display {
 		}
 		
 		// check if templates exists
-		if (!is_dir($options['templatepath'])) {
-			throw new \Exception('Temlates directory is not found');
+		if (is_array($options['templatepath'])) {
+			$found = false;
+			
+			foreach ($options['templatepath'] as &$path) {
+				if ($path != '' && is_dir($path)) {
+					$found = true;
+					
+					if (substr($path,-1) != '/') {
+						$path .= '/';
+					}
+				}
+			}
+			if (!$found) {
+				throw new \Exception('Temlates directory is not found');
+			}
+		} else {
+			if (!is_dir($options['templatepath'])) {
+				throw new \Exception('Temlates directory is not found');
+			}
+			if (substr($options['templatepath'],-1) != '/') {
+				$options['templatepath'] .= '/';
+			}
 		}
 		
-		if (substr($options['templatepath'],-1) != '/') {
-			$options['templatepath'] .= '/';
-		}
+		
 		
 		if (isset($options['templatescomplpath']) &&
 			substr($options['templatescomplpath'],-1) != '/') {
@@ -127,6 +145,7 @@ class HTML extends Display {
 		
 		$templateset = false;
 		$outtemplate = $this->options['outtemplate'];
+		
 		if ($this->options['view'] !='') {
 			if ($templating->checkTemplateExists($this->options['view'].'/'.$this->options['template'])) {
 				$templating->setTemplate($this->options['view'].'/'.$this->options['template']);
