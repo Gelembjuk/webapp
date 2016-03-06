@@ -20,11 +20,13 @@ abstract class Application {
 	protected $localeautoload;
 	protected $config;
 	protected $options;
+	protected $configextra;
 	
 	protected $userid;
 
 	public function __construct() {
 		$this->config = null;
+		$this->configextra = null;
 		$this->userid = 0;
 		$this->dbobjects = array();
 		$this->dbengines = array();
@@ -377,6 +379,29 @@ abstract class Application {
 	}
 	public function getConfig($name) {
 		return $this->config->$name;
+	}
+	public function getConfigExtra($name) {
+		if ($this->configextra == null) {
+			// load config before using
+			
+			if (is_array($this->options['extraconfig'])) {
+				$configfile = $this->options['extraconfig'][0];
+				$configclass = $this->options['extraconfig'][1];
+				
+				if (file_exists($configfile)) {
+					require_once($configfile);
+					
+					if (class_exists($configclass)) {
+						$this->configextra = new $configclass();
+					}
+				}
+			}
+			
+			if ($this->configextra == null) {
+				$this->configextra = new \stdClass();
+			}
+		}
+		return $this->configextra->$name;
 	}
 	public function getOption($name) {
 		return $this->options[$name];
