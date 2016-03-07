@@ -435,6 +435,11 @@ abstract class Application {
 	protected function getRouterNameFromRequest() {
 		return $this->getDefaultRouter();
 	}
+	
+	// Profiling
+	public function profilerAction($type,$time,$string) {
+		return true;
+	}
 	// ================== ABSTRACT =================
 	abstract protected function getDefaultRouter();
 	abstract protected function getDefaultControllerName();
