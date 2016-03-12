@@ -42,9 +42,9 @@ abstract class Controller {
 		
 		$this->initAuthSession();
 		
-		$this->beforeStart();
-		
 		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
+		
+		$this->beforeStart();
 		
 		// set response format to error handler. so if error happens 
 		// after this place then reponse is in correct format
@@ -241,6 +241,28 @@ abstract class Controller {
 		}
 		
 		throw new \Exception('Unknown action in a controller '.$this->getName());
+	}
+	public function actionOffline() {
+		$this->application->setActionController($this);
+		
+		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
+		
+		// set response format to error handler. so if error happens 
+		// after this place then reponse is in correct format
+		$errorhandler = $this->application->getErrorHandler();
+		
+		if (is_object($errorhandler)) {
+			$errorhandler->setViewFormat( ($this->responseformat != '') ? $this->responseformat:'html' );
+		}
+		
+		$viewer = $this->getViewer();
+		
+		// to be sure the view points to this controller
+		$viewer->setController($this);
+		
+		$result = $viewer->doView('offline',$this->responseformat);
+			
+		return true;
 	}
 	protected function isHTMLResp() {
 		return ($this->responseformat == '' || $this->responseformat == 'html');

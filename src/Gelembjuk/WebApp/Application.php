@@ -128,6 +128,10 @@ abstract class Application {
 		// controller will be detected by router and created
 		$controller = $this->getController();
 
+		if ($this->getConfig('offline')) {
+			return $controller->actionOffline();
+		}
+		
 		return $controller->action();
 	}
 	public function setUserID($userid) {

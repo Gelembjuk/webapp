@@ -155,6 +155,15 @@ abstract class View {
 		
 		return true;
 	}
+	
+	protected function viewOffline() {
+	
+		$this->htmltemplate = 'offline';
+		$this->htmlouttemplate_disable = true;
+		
+		return true;
+	}
+	
 	protected function displayWithObject($class,$altoption,$displayoptions = array()) {
 		
 		if (isset($this->options[$altoption])) {
