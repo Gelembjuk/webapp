@@ -317,7 +317,11 @@ abstract class Application {
 		
 		$engine = $this->getDBEngine($profile);
 		
-		$classpath = $this->options['databasenamespace'].$name;
+		if (substr($name,0,1) != '\\') {
+			$classpath = $this->options['databasenamespace'].$name;
+		} else {
+			$classpath = $name;
+		}
 
 		if (!class_exists($classpath)) {
 			throw new \Exception(sprintf('DB class %s not found',$classpath));
