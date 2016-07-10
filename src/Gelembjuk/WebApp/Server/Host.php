@@ -9,7 +9,7 @@ class Host {
 	public function __construct() {
 		
 	}
-	public function getBaseHost() {
+	public function getUrl() {
 		return sprintf(
 			"%s://%s%s",
 			isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http',
@@ -17,7 +17,7 @@ class Host {
 			$_SERVER['REQUEST_URI']
 		);
 	}
-	public function getUrl() {
+	public function getBaseHost() {
 		return sprintf(
 			"%s://%s",
 			isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http',
