@@ -268,6 +268,24 @@ abstract class Controller {
 		return ($this->responseformat == '' || $this->responseformat == 'html');
 	}
 	protected function redirect($url,$script = false) {
+        // extract message from an url and set it to the session 
+        
+        $match = '/(message=([^&]*))/';
+        
+        if (preg_match($match, $url, $m)) {
+            $message = urldecode($m[2]);
+
+            $url = preg_replace($match, '', $url);
+            
+            if (substr($url,-2) == '?&') {
+                $url = substr($url,0,-2);
+            } elseif (substr($url,-1) == '&' || substr($url,-1) == '?') {
+                $url = substr($url,0,-1);
+            }
+            
+            $this->router->setMessageToSession($message);
+        }
+        
 		list($url,$script) = $this->filterRedirect($url,$script);
 		
 		if ($script) {

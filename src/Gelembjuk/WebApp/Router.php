@@ -356,6 +356,31 @@ abstract class Router {
 	public function getReferrer() {
 		return $_SERVER['HTTP_REFERER'];
 	}
+	/*
+	* Return message if is was set before
+	*/
+	public function getMessageFromSession()
+	{
+        $this->initSession();
+        
+        if (isset($_SESSION['APPLICATIONMESSAGE'])) {
+            $message = $_SESSION['APPLICATIONMESSAGE'];
+            
+            unset($_SESSION['APPLICATIONMESSAGE']);
+            
+            return $message;
+        }
+        return "";
+	}
+	/*
+	* Set message to a session to read it on a next view 
+	*/
+	public function setMessageToSession($message)
+	{
+        $this->initSession();
+        
+        $_SESSION['APPLICATIONMESSAGE'] = $message;
+	}
 	
 	abstract public function getController();
 	abstract public function parseUrl($url = '');

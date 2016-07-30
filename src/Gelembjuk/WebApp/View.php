@@ -23,6 +23,7 @@ abstract class View {
 	protected $defmodel;
 	
 	protected $signinreqired;
+	protected $readmessagefrominput = false;
 	
 	protected $options;
 	protected $application;
@@ -95,6 +96,9 @@ abstract class View {
 		// prepare some extra data to display
 		$this->beforeDisplay();
 		
+		// prepare message to show to a user 
+		$this->beforeDisplayPrepareMessage();
+		
 		// dislay data
 		
 		$displaymethodname = 'display'.strtoupper($this->responseformat);
@@ -115,6 +119,54 @@ abstract class View {
 	*/
 	protected function beforeDisplay() {
 	}
+	
+	/*
+	* Message can be in input argument or in a session
+	* By default it is not allowed to read a message from input 
+	*/
+	protected function beforeDisplayPrepareMessage()
+	{
+        // check if there is a message in a session. 
+        // If yes then read and remove (removing is done inside a router)
+        if ($this->viewdata['message'] == '') {
+            $this->viewdata['message'] = $this->router->getMessageFromSession();
+        }
+        
+        if ($this->readmessagefrominput && $this->viewdata['message'] == '') {
+            // read inout argument to get a message 
+            $this->viewdata['message'] = $this->getInput('message');
+        }
+        
+        if ($this->viewdata['message'] != '') {
+        
+            $mt = $this->viewdata['message'];
+            $mt = htmlentities($mt);
+            $mt = str_replace('\'','"',$mt);
+            $messstyle = 'info';
+            
+            // message style can be included as a prefix to a message 
+            if (preg_match('!^(alert|success|warning|error|info|s|e|w|a|i):(.+)$!',$mt,$m)) {
+                $mt = $m[2];
+                $messstyle = $m[1];
+                
+                switch ($messstyle) {
+                    case 'a': $messstyle = 'info'; break;
+                    case 'e': $messstyle = 'danger'; break;
+                    case 'w': $messstyle = 'warning'; break;
+                    case 's': $messstyle = 'success'; break;
+                    case 'i': $messstyle = 'info'; break;
+                }
+            } elseif (preg_match('!success!i',$mt)) {
+                $messstyle = 'success';
+            }
+            unset($this->viewdata['message']);
+            
+            $this->viewdata['MESSAGE'] =  $mt;
+            $this->viewdata['MESSAGESTYLE'] = $messstyle;
+        }
+	}
+	
+	// standard error view
 	protected function viewError() {
 		$this->htmlouttemplate_force = '';
 		// in child classes this can be redefined to use some better error page
