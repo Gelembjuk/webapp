@@ -51,6 +51,12 @@ abstract class Router {
 	}
 	public function parseRequest() {
 		$this->input = array_merge($this->input,$_REQUEST);
+		
+		foreach ($_COOKIE as $k => $v) {
+            if (!isset($this->input[$k])) {
+                $this->input[$k] = $v;
+            }
+		}
 		return true;
 	}
 	public function parseGet() {
@@ -375,10 +381,13 @@ abstract class Router {
 	/*
 	* Set message to a session to read it on a next view 
 	*/
-	public function setMessageToSession($message)
+	public function setMessageToSession($message,$messagestyle = '')
 	{
         $this->initSession();
         
+        if ($messagestyle != '') {
+            $message = $messagestyle . ':' . $message;
+        }
         $_SESSION['APPLICATIONMESSAGE'] = $message;
 	}
 	
