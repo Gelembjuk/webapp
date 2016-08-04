@@ -126,43 +126,45 @@ abstract class View {
 	*/
 	protected function beforeDisplayPrepareMessage()
 	{
-        // check if there is a message in a session. 
-        // If yes then read and remove (removing is done inside a router)
-        if ($this->viewdata['message'] == '') {
-            $this->viewdata['message'] = $this->router->getMessageFromSession();
-        }
-        
-        if ($this->readmessagefrominput && $this->viewdata['message'] == '') {
-            // read inout argument to get a message 
-            $this->viewdata['message'] = $this->getInput('message');
-        }
-        
-        if ($this->viewdata['message'] != '') {
-        
-            $mt = $this->viewdata['message'];
-            $mt = htmlentities($mt);
-            $mt = str_replace('\'','"',$mt);
-            $messstyle = 'info';
-            
-            // message style can be included as a prefix to a message 
-            if (preg_match('!^(alert|success|warning|error|info|s|e|w|a|i):(.+)$!',$mt,$m)) {
-                $mt = $m[2];
-                $messstyle = $m[1];
-                
-                switch ($messstyle) {
-                    case 'a': $messstyle = 'info'; break;
-                    case 'e': $messstyle = 'danger'; break;
-                    case 'w': $messstyle = 'warning'; break;
-                    case 's': $messstyle = 'success'; break;
-                    case 'i': $messstyle = 'info'; break;
-                }
-            } elseif (preg_match('!success!i',$mt)) {
-                $messstyle = 'success';
+        if ($this->responseformat == 'html') {
+            // check if there is a message in a session. 
+            // If yes then read and remove (removing is done inside a router)
+            if ($this->viewdata['message'] == '') {
+                $this->viewdata['message'] = $this->router->getMessageFromSession();
             }
-            unset($this->viewdata['message']);
             
-            $this->viewdata['MESSAGE'] =  $mt;
-            $this->viewdata['MESSAGESTYLE'] = $messstyle;
+            if ($this->readmessagefrominput && $this->viewdata['message'] == '') {
+                // read inout argument to get a message 
+                $this->viewdata['message'] = $this->getInput('message');
+            }
+            
+            if ($this->viewdata['message'] != '') {
+            
+                $mt = $this->viewdata['message'];
+                $mt = htmlentities($mt);
+                $mt = str_replace('\'','"',$mt);
+                $messstyle = 'info';
+                
+                // message style can be included as a prefix to a message 
+                if (preg_match('!^(alert|success|warning|error|info|s|e|w|a|i):(.+)$!',$mt,$m)) {
+                    $mt = $m[2];
+                    $messstyle = $m[1];
+                    
+                    switch ($messstyle) {
+                        case 'a': $messstyle = 'info'; break;
+                        case 'e': $messstyle = 'danger'; break;
+                        case 'w': $messstyle = 'warning'; break;
+                        case 's': $messstyle = 'success'; break;
+                        case 'i': $messstyle = 'info'; break;
+                    }
+                } elseif (preg_match('!success!i',$mt)) {
+                    $messstyle = 'success';
+                }
+                unset($this->viewdata['message']);
+                
+                $this->viewdata['MESSAGE'] =  $mt;
+                $this->viewdata['MESSAGESTYLE'] = $messstyle;
+            }
         }
 	}
 	
