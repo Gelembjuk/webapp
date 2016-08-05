@@ -44,7 +44,15 @@ abstract class Controller {
 		
 		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
 		
-		$this->beforeStart();
+		try {
+            $this->beforeStart();
+		} catch(\Exception $e) {
+            $actiontype = 'view';
+            $actionmethod = 'error';
+            
+            $this->router->setInput('errormessage',$e->getMessage());
+            $this->router->setInput('errornumber',$e->getCode());
+		}
 		
 		// set response format to error handler. so if error happens 
 		// after this place then reponse is in correct format
