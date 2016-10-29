@@ -427,8 +427,25 @@ abstract class Application {
 		$hostinfo = new \Gelembjuk\WebApp\Server\Host();
 		return $hostinfo->getBaseHost();
 	}
-	
+	// build urls
 	public function makeUrl($controllername,$opts = array()) {
+        if ($controllername == '') {
+            // try to get currect action controller
+            $curactioncontrollerobject = $this->getActionController();
+            
+            if (is_object($curactioncontrollerobject)) {
+                $controllername = $curactioncontrollerobject;
+            }
+        }
+        
+        // detect if default controller should be used
+        if (!is_object($controllername) && 
+            ($controllername == '' || $controllername == 'def')) {
+            
+            $controllername = $this->getDefaultControllerName();
+        }
+	
+	
 		if (is_object($controllername)) {
 			$controller = $controllername;
 		} else {
@@ -437,6 +454,19 @@ abstract class Application {
 		
 		return $controller->makeUrl($opts);
 	}
+	// absolute url
+	public function makeAbsUrl($controllername,$opts = array()) {
+        
+        $relativeurl = $this->makeUrl($controllername,$opts);
+        
+        $baseurl = $this->getBasehost();
+        
+        if (substr($baseurl,-1) == '/' && substr($relativeurl,0,1) == '/') {
+            $relativeurl = substr($relativeurl,1);
+        }
+        
+        return $baseurl . $relativeurl;
+    }
 	public function makeUrlByRouter($router,$opts = array()) {
 		return $router->makeUrl($opts);
 	}
