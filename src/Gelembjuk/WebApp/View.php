@@ -245,7 +245,7 @@ abstract class View {
 		$displayoptions = array(
 			'tmpdir' => $this->options['tmproot'],
 			'templatingclass' => $this->options['templatingclass'],
-			'templatepath' => $this->options['htmltemplatespath'],
+			'templatepath' => $this->options['htmltemplatespath'] . $this->getHTMLTemplatesSubFolder(),
 			'templatesoptions' => $this->options['htmltemplatesoptions'],
 			'template' => $this->htmltemplate,
 			'view' => $this->getViewFolderName(),
@@ -309,5 +309,9 @@ abstract class View {
 	}
 	protected function getViewFolderName() {
 		return $this->getName();
+	}
+	protected function getHTMLTemplatesSubFolder()
+	{
+        return '';
 	}
 }
