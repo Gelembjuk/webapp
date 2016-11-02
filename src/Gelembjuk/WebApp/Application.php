@@ -14,6 +14,11 @@ abstract class Application {
 	protected $models;
 	protected $controllers;
 	protected $routers;
+	/**
+	* @var
+	* First router object loaded. It can give some useful info about the application mode
+	*/
+	protected $routerfront = null;
 	protected $actioncontroller;
 	protected $cache;
 	
@@ -184,6 +189,12 @@ abstract class Application {
 				$controllername = ucfirst($this->getOption('DefaultController'));
 			} else {
 				$router = $this->getRouter();
+				
+				if ($this->routerfront === null) {
+                    $this->routerfront = $router;
+                    $this->frontRouterLoaded();
+				}
+				
 				$controllername = $router->getController();
 			}
 		}
@@ -198,7 +209,7 @@ abstract class Application {
 			if ($router) {
 				$router->setErrorPage('Controller not found','not_found',404);
 			}
-			$controllerpath = $this->cgetControllerFullClass($this->getDefaultControllerName());
+			$controllerpath = $this->getControllerFullClass($this->getDefaultControllerName());
 		}
 		
 		if (!class_exists($controllerpath)) {
@@ -218,6 +229,13 @@ abstract class Application {
 		$this->controllers[$controllername] = $controller;
 		
 		return $controller;
+	}
+	/**
+	* This is the hook function to do some action when a front router loaded and controller is not loaded yet
+	*/
+	protected function frontRouterLoaded()
+	{
+        // Implement somethign in your application
 	}
 	public function setActionController($object) {
 		$this->actioncontroller = $object;
