@@ -23,6 +23,17 @@ abstract class Application {
 	protected $configextra;
 	
 	protected $userid;
+	
+	/**
+	* Class paces for MVC model components
+	* This can be modified by application in case if multiple spaces are needed
+	* For example, for admin side, MVC can be isolated 
+	*/
+	protected $controllerspace;
+	protected $viewspace;
+	protected $modelspace;
+	protected $dbclassspace;
+	protected $routerspace;
 
 	public function __construct() {
 		$this->config = null;
@@ -88,21 +99,27 @@ abstract class Application {
 		
 		if (isset($this->options['applicationnamespace'])) {
 			if (!isset($this->options['modelsnamespace'])) {
-				$this->options['modelsnamespace'] = $this->options['applicationnamespace'];
+				$this->options['modelsnamespace'] = $this->options['applicationnamespace'] . 'Models\\';
 			}
 			if (!isset($this->options['controllersnamespace'])) {
-				$this->options['controllersnamespace'] = $this->options['applicationnamespace'];
+				$this->options['controllersnamespace'] = $this->options['applicationnamespace'] . 'Controllers\\';
 			}
 			if (!isset($this->options['databasenamespace'])) {
-				$this->options['databasenamespace'] = $this->options['applicationnamespace'];
+				$this->options['databasenamespace'] = $this->options['applicationnamespace'] . 'Database\\';
 			}
 			if (!isset($this->options['viewsnamespace'])) {
-				$this->options['viewsnamespace'] = $this->options['applicationnamespace'];
+				$this->options['viewsnamespace'] = $this->options['applicationnamespace'] . 'Views\\';
 			}
 			if (!isset($this->options['routersnamespace'])) {
-				$this->options['routersnamespace'] = $this->options['applicationnamespace'];
+				$this->options['routersnamespace'] = $this->options['applicationnamespace'] . 'Routers\\';
 			}
 		}
+		
+        $this->controllerspace = $this->options['controllersnamespace'];
+        $this->viewspace = $this->options['viewsnamespace'];
+        $this->modelspace = $this->options['modelsnamespace'];
+        $this->dbclassspace = $this->options['databasenamespace'];
+        $this->routerspace = $this->options['routersnamespace'];
 		
 		$this->options['basehost'] = $this->getBasehost();
 		
@@ -143,7 +160,14 @@ abstract class Application {
 	public function getUserRecord() {
 		return array('id' => $this->getUserID());
 	}
-	
+	protected function getControllerFullClass($controllerclass)
+	{
+        if (substr($controllerclass,0,1) == '\\') {
+            // this is absolute class name
+            return $controllerclass;
+        }
+        return $this->controllerspace . $controllerclass;
+    }
 	public function getController($controllername = '',$exceptiononnotfound = false, $alwayscreatenew = false) {
 		if ($controllername != '') {
 			$controllername = ucfirst($controllername);
@@ -164,7 +188,7 @@ abstract class Application {
 			}
 		}
 		
-		$controllerpath = $this->options['controllersnamespace'].$controllername;
+		$controllerpath = $this->getControllerFullClass($controllername);
 		
 		if (!class_exists($controllerpath) && $this->getDefaultControllerName() != '') {
 			if ($exceptiononnotfound) {
@@ -174,7 +198,7 @@ abstract class Application {
 			if ($router) {
 				$router->setErrorPage('Controller not found','not_found',404);
 			}
-			$controllerpath = $this->options['controllersnamespace'].$this->getDefaultControllerName();
+			$controllerpath = $this->cgetControllerFullClass($this->getDefaultControllerName());
 		}
 		
 		if (!class_exists($controllerpath)) {
@@ -185,7 +209,7 @@ abstract class Application {
 			throw new \Exception('Controller must be subclass of \\Gelembjuk\\WebApp\\Controller');
 		}
 
-		$this->debug('Make Controller '.$controllerpath);
+		$this->logQ('Make Controller '.$controllerpath,'application');
 		
 		$controller = new $controllerpath($this,$router);
 		
@@ -210,6 +234,14 @@ abstract class Application {
 		
 		return $this->cache;
 	}
+	protected function getRouterFullClass($routerclass)
+    {
+        if (substr($routerclass,0,1) == '\\') {
+            // this is absolute class name
+            return $routerclass;
+        }
+        return $this->routerspace . $routerclass;
+    }
 	public function getRouter($routername = '', $alwayscreatenew = false) {
 		
 		if ($routername == '') {
@@ -217,13 +249,11 @@ abstract class Application {
 			$routername = $defroutername;	
 		}
 		
-		if (strpos($routername,'\\') === false) {
-			$routername = $this->options['routersnamespace'].$routername;
-		}
+		$routername = $this->getRouterFullClass($routername);
 		
 		if (!class_exists($routername)) {
 			$defroutername = $this->getDefaultRouter();
-			$routername = $this->options['routersnamespace'].$defroutername;
+			$routername = $this->getRouterFullClass($defroutername);
 		}
 		
 		if (!$alwayscreatenew && $routername != '' && isset($this->routers[$routername])) {
@@ -238,7 +268,7 @@ abstract class Application {
 			throw new \Exception('Router must be subclass of \\Gelembjuk\\WebApp\\Router');
 		}
 
-		$this->debug('Make Router '.$routername);
+		$this->logQ('Make Router '.$routername,'application');
 		
 		$router = new $routername($this,$this->options);
 		
@@ -312,16 +342,19 @@ abstract class Application {
 
 		return $this->getDBONew($name,$profile);
 	}
-	
+	protected function getDBOFullClass($dboclass)
+    {
+        if (substr($dboclass,0,1) == '\\') {
+            // this is absolute class name
+            return $dboclass;
+        }
+        return $this->dbclassspace . $dboclass;
+    }
 	public function getDBONew($name,$profile = 'default') {		
 		
 		$engine = $this->getDBEngine($profile);
 		
-		if (substr($name,0,1) != '\\') {
-			$classpath = $this->options['databasenamespace'].$name;
-		} else {
-			$classpath = $name;
-		}
+		$classpath = $this->getDBOFullClass($name);
 
 		if (!class_exists($classpath)) {
 			throw new \Exception(sprintf('DB class %s not found',$classpath));
@@ -331,7 +364,7 @@ abstract class Application {
 			throw new \Exception('DB Object must be subclass of \\Gelembjuk\\DB\\Base');
 		}
 		
-		$this->debug('Make DBO '.$name);
+		$this->logQ('Make DBO '.$name,'application');
 		
 		$object = new $classpath($engine,$this);
 		
@@ -340,15 +373,25 @@ abstract class Application {
 		return $object;
 	}
 	
+	protected function getModelFullClass($modelclass)
+    {
+        if (substr($modelclass,0,1) == '\\') {
+            // this is absolute class name
+            return $modelclass;
+        }
+        return $this->modelspace . $modelclass;
+    }
+	
 	public function getModel($name,$options = array(),$alwayscreatenew = false) {
-		$modelkey = md5(json_encode($options));		
+		$modelkey = md5(json_encode($options));	
+		
 		if (!$alwayscreatenew && isset($this->models[$name.$modelkey])) {
 			return $this->models[$name.$modelkey];
 		}
 
-		$this->debug('Make Model '.$name);
+		$this->logQ('Make Model '.$name,'application');
 		
-		$classpath = $this->options['modelsnamespace'].$name;
+		$classpath = $this->getModelFullClass($name);
 
 		if (!class_exists($classpath)) {
 			throw new \Exception(sprintf('Model class %s not found',$classpath));
@@ -364,9 +407,16 @@ abstract class Application {
 		
 		return $object;
 	}
-	
+	protected function getViewFullClass($viewclass)
+    {
+        if (substr($viewclass,0,1) == '\\') {
+            // this is absolute class name
+            return $viewclass;
+        }
+        return $this->viewspace . $viewclass;
+    }
 	public function getView($name,$router,$controller = null) {		
-		$classpath = $this->options['viewsnamespace'].$name;
+		$classpath = $this->getViewFullClass($name);
 
 		if (!class_exists($classpath)) {
 			throw new \Exception(sprintf('View class %s not found',$classpath));
