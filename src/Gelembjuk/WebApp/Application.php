@@ -165,13 +165,20 @@ abstract class Application {
 	public function getUserRecord() {
 		return array('id' => $this->getUserID());
 	}
-	protected function getControllerFullClass($controllerclass)
+	protected function getControllerFullClass($controllerclass, $prefix = '')
 	{
         if (substr($controllerclass,0,1) == '\\') {
             // this is absolute class name
             return $controllerclass;
         }
-        return $this->controllerspace . $controllerclass;
+        
+        $controllerclass = ucfirst($controllerclass);
+        
+        if ($prefix == '') {
+            return $this->controllerspace . $controllerclass;
+        } else {
+            return $prefix . $controllerclass;
+        }
     }
 	public function getController($controllername = '',$exceptiononnotfound = false, $alwayscreatenew = false) {
 		if ($controllername != '') {
@@ -258,7 +265,7 @@ abstract class Application {
             // this is absolute class name
             return $routerclass;
         }
-        return $this->routerspace . $routerclass;
+        return $this->routerspace . ucfirst($routerclass);
     }
 	public function getRouter($routername = '', $alwayscreatenew = false) {
 		
@@ -366,7 +373,7 @@ abstract class Application {
             // this is absolute class name
             return $dboclass;
         }
-        return $this->dbclassspace . $dboclass;
+        return $this->dbclassspace . ucfirst($dboclass);
     }
 	public function getDBONew($name,$profile = 'default') {		
 		
@@ -397,7 +404,7 @@ abstract class Application {
             // this is absolute class name
             return $modelclass;
         }
-        return $this->modelspace . $modelclass;
+        return $this->modelspace . ucfirst($modelclass);
     }
 	
 	public function getModel($name,$options = array(),$alwayscreatenew = false) {
@@ -431,7 +438,7 @@ abstract class Application {
             // this is absolute class name
             return $viewclass;
         }
-        return $this->viewspace . $viewclass;
+        return $this->viewspace . ucfirst($viewclass);
     }
 	public function getView($name,$router,$controller = null) {		
 		$classpath = $this->getViewFullClass($name);

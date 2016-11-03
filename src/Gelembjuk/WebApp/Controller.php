@@ -310,6 +310,9 @@ abstract class Controller {
 		return $function->getShortName();
 	}
 	public function makeUrl($opts = array()) {
+        // get more options to an url
+        $opts = $this->completeUrlOpts($opts);
+        
 		$opts['controller'] = $this->getName();
 		return $this->router->makeUrl($opts);
 	}
@@ -373,6 +376,13 @@ abstract class Controller {
 			
 			throw new \Exception($errormessage,401);
 		}
+	}
+	/**
+	* Function helps to build complete urls. It can be used
+	* to add some more arguments to url. For example, some titles/texts for SEO optimization
+	*/
+	protected function completeUrlOpts($opts) {
+        return $opts;
 	}
 	
 	abstract protected function getRouter();
