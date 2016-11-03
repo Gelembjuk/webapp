@@ -178,10 +178,6 @@ abstract class Application {
 			$controllername = ucfirst($controllername);
 		}
 		
-		if (!$alwayscreatenew && $controllername != '' && isset($this->controllers[$controllername])) {
-			return $this->controllers[$controllername];
-		}
-		
 		$router = null;
 		
 		if ($controllername == '') {
@@ -219,6 +215,10 @@ abstract class Application {
 		if (!is_subclass_of($controllerpath, '\\Gelembjuk\\WebApp\\Controller')) {
 			throw new \Exception('Controller must be subclass of \\Gelembjuk\\WebApp\\Controller');
 		}
+		
+		if (!$alwayscreatenew && isset($this->controllers[$controllerpath])) {
+            return $this->controllers[$controllerpath];
+        }
 
 		$this->logQ('Make Controller '.$controllerpath,'application');
 		
@@ -226,7 +226,7 @@ abstract class Application {
 		
 		$controller->init();
 		
-		$this->controllers[$controllername] = $controller;
+		$this->controllers[$controllerpath] = $controller;
 		
 		return $controller;
 	}
