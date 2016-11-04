@@ -23,36 +23,16 @@ class appConfig {
 
 // application options
 $options = array(
-	'webroot' => $thisdirectory,
-	'tmproot' => $thisdirectory.'tmp/',
-	'applicationnamespace' => '\\',
-	'htmltemplatespath' => $thisdirectory.'template/',
-	'htmltemplatesoptions' => array('extension' => 'htm') // our templates will have HTML extension
+    'webroot' => $thisdirectory,
+    'tmproot' => $thisdirectory.'tmp/',
+    'relativebaseurl' => '/example/2/', // this option is useful only if default Router is used.
+    'loggerstandard' => true,
+    'applicationnamespace' => '\\',
+    'defaultcontrollername' => 'MyController', // defines what controller to run if not specified in a request (anyway , we have only one controller)
+    'htmltemplatespath' => $thisdirectory.'template/',
+    'htmltemplatesoptions' => array('extension' => 'htm') // our templates will have HTML extension
 );
-
-// application class
-class MyApplication extends \Gelembjuk\WebApp\Application{
-	public function init($config,$options = array()) {
-		parent::init($config,$options);
-
-		$this->setLogger(new \Gelembjuk\Logger\FileLogger(
-					array(
-					'logfile'=>$this->getOption('tmproot').'log.txt',
-					'groupfilter' => $this->getConfig('loggingfilter')
-					)
-				)
-			);
-	}
-	protected function getDefaultRouter() {
-		return 'MyRouter';
-	}
-	protected function getRouterNameFromRequest() {
-		return 'MyRouter';
-	}
-	protected function getDefaultControllerName() {
-		return 'MyController';
-	}
-} 
+ 
 // controller class
 class MyController extends \Gelembjuk\WebApp\Controller {
 	// viewer name.
@@ -84,61 +64,7 @@ class MyController extends \Gelembjuk\WebApp\Controller {
 	
 	
 }
-// router class
-class MyRouter extends \Gelembjuk\WebApp\Router {
-	public function init() {	
-		$this->controllername = 'MyController';
-	}
-	public function getController() {
-		// we have only one controller in this app
-		return 'MyController';
-	}
-	
-	protected function setUpActionInfo() {
-		// we determine required action based on input arguments
-		if ($this->getInput('view') != '') {
-			// display something
-			$this->actiontype = 'view';
-			$this->actionmethod = $this->getInput('view','alpha');
-			
-		} elseif ($this->getInput('do') != '') {
-			// do something
-			$this->actiontype = 'do';
-			$this->actionmethod = $this->getInput('do','alpha');
-			
-		} elseif ($this->getInput('redirect','plaintext') != '') {
-			// redirect to other page
-			$this->actiontype = 'redirect';
-			$this->actionmethod = $this->getInput('redirect','plaintext');
-		} else {
-			// display default page
-			$this->actiontype = 'view';
-			$this->actionmethod = '';
-		}
-		if ($this->getInput('responseformat','alpha') != '') {
-			// user requested not default response format
-			$this->responseformat = $this->getInput('responseformat','alpha');
-		}
-		return true;
-	}
 
-	public function makeUrl($opts = array()) {
-		$url = '/example/';
-		
-		if (count($opts) > 0) {
-			$url .= '?';
-			
-			foreach ($opts as $k=>$v) {
-				$url .= $k . '=' . urlencode($v) .'&';
-			}
-		}
-		
-		return $url;
-	}
-	public function parseUrl($url = '') {
-		// do nothing. we don't use 'nice' urls there
-	}
-}
 // view class
 class MyViewer extends \Gelembjuk\WebApp\View{
 	protected function view() {
@@ -183,7 +109,7 @@ class MyViewer extends \Gelembjuk\WebApp\View{
 	}
 }
 
-$application = MyApplication::getInstance();
+$application = \Gelembjuk\WebApp\Application::getInstance();
 
 $application->init(new appConfig(),$options);
 
