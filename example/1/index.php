@@ -120,7 +120,7 @@ class MyRouter extends \Gelembjuk\WebApp\Router {
 	}
 
 	public function makeUrl($opts = array()) {
-		$url = '/example/';
+		$url = '/example/1/';
 		
 		if (count($opts) > 0) {
 			$url .= '?';

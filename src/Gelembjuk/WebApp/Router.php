@@ -2,7 +2,7 @@
 
 namespace Gelembjuk\WebApp;
 
-abstract class Router {
+class Router {
 	use \Gelembjuk\Logger\ApplicationLogger;
 	use \Gelembjuk\Locale\GetTextTrait;
 	
@@ -12,9 +12,8 @@ abstract class Router {
 	protected $actiontype = '';
 	protected $actionmethod = '';
 	protected $responseformat = '';
-	protected $httmmethod = 'GET';
+	protected $httpmethod = 'GET';
 	protected $options;
-	protected $controllername;
 	protected $application;
 	protected static $phpsessioninited;
 
@@ -22,8 +21,7 @@ abstract class Router {
 		self::$phpsessioninited = false;
 		$this->application = $application;
 		$this->options = $options;
-		$this->httmmethod = $_SERVER['REQUEST_METHOD'];
-		$this->controllername = '';
+		$this->httpmethod = $_SERVER['REQUEST_METHOD'];
 		$this->clearInput();
 		$this->parseInput();
 		$this->setUpActionInfo();
@@ -391,9 +389,68 @@ abstract class Router {
         $_SESSION['APPLICATIONMESSAGE'] = $message;
 	}
 	
-	abstract public function getController();
-	abstract public function parseUrl($url = '');
-	abstract protected function setUpActionInfo();
-	abstract public function makeUrl($opts = array());
+	public function getController()
+	{
+        // this is default case when there is only one controller. 
+        // In most of application, it is expected, this function will be reimplemented in child class
+        return $this->application->getOption('defaultcontrollername');
+	}
+	public function parseUrl($url = '')
+	{
+        // this does nothing by default. Use it to do action
+        // similar to traditional mod_rewrite
+        return true;
+	}
+	/**
+	* It is expected this function will be overwritten in child classes
+	* Here it implements simple way with some traditional argument names
+	*/
+	protected function setUpActionInfo() {
+        // we determine required action based on input arguments
+        if ($this->getInput('view') != '') {
+            // display something
+            $this->actiontype = 'view';
+            $this->actionmethod = $this->getInput('view','alpha');
+            
+        } elseif ($this->getInput('do') != '') {
+            // do something
+            $this->actiontype = 'do';
+            $this->actionmethod = $this->getInput('do','alpha');
+            
+        } elseif ($this->getInput('redirect','plaintext') != '') {
+            // redirect to other page
+            $this->actiontype = 'redirect';
+            $this->actionmethod = $this->getInput('redirect','plaintext');
+        } else {
+            // display default page
+            $this->actiontype = 'view';
+            $this->actionmethod = '';
+        }
+        if ($this->getInput('responseformat','alpha') != '') {
+            // user requested not default response format
+            $this->responseformat = $this->getInput('responseformat','alpha');
+        }
+        return true;
+    }
+    /**
+    * It is recommended to overwrite this function if some custom urls are used in application
+    */
+	public function makeUrl($opts = array()) {
+        $url = $this->application->getOption('relativebaseurl');
+        
+        if ($url == '') {
+            $url = '/';
+        }
+        
+        if (count($opts) > 0) {
+            $url .= '?';
+            
+            foreach ($opts as $k=>$v) {
+                $url .= $k . '=' . urlencode($v) .'&';
+            }
+        }
+        
+        return $url;
+    }
 	
 }

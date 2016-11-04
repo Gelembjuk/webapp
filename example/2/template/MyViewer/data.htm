@@ -1,0 +1,13 @@
+<div>
+
+<p>Some array output</p>
+<ul>
+{foreach from=$data item=user}
+<li>{$user.name} ({$user.email})</li>
+{/foreach}
+</ul>
+
+<p>Same data in <a href="{link view='data' responseformat='json'}">JSON</a> format</p>
+<p>Same data in <a href="{link view='data' responseformat='xml'}">XML</a> format</p>
+
+</div>

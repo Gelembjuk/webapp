@@ -1,7 +1,15 @@
 
-example/vendor
-example/vendor/*
+example/1/vendor
+example/1/vendor/*
 
-example/tmp/templates_c/
-example/tmp/templates_c/*
-example/tmp/log.txt
+example/1/tmp/templates_c/
+example/1/tmp/templates_c/*
+example/1/tmp/log.txt
+
+
+example/2/vendor
+example/2/vendor/*
+
+example/2/tmp/templates_c/
+example/2/tmp/templates_c/*
+example/2/tmp/log.txt

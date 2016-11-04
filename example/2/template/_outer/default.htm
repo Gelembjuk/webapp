@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+
+    <title>{$applicationtitle}</title>
+
+</head>
+
+<body >
+
+<div>
+<h1>{$applicationtitle}</h1>
+<h2>Gelembjuk/WebApp usage example</h2>
+</div>
+
+{if $message != ''}
+<div style="color:red;padding:30px;">{$message}</div>
+{/if}
+
+<div>
+	<a href="{link}">Home</a>
+	<a href="{link view="form"}">Contact</a>
+	<a href="{link view='data'}">Data</a>
+</div>
+
+{$INNERCONTENTS}
+
+<div>
+	<hr>
+	Pages Footer. Same page for all<br>
+	{$applicationtitle}
+</div>
+</body>
+</html>

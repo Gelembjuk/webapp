@@ -72,8 +72,11 @@ class Application {
 		if ($this->options['loggerstandard']) {
             // this is logger configuration that works fine for most cases
             $this->options['loggerclass'] = '\\Gelembjuk\\Logger\\FileLogger';
+            
+            $logdir = (!empty($this->getOption('logdirectory'))) ? $this->getOption('logdirectory') : $this->getOption('tmproot');
+            
             $this->options['loggeroptions'] = [
-                    'logfile' => $this->getOption('logdirectory') . 'log.txt',
+                    'logfile' => $logdir . 'log.txt',
                     'groupfilter' => $this->getConfig('loggingfilter')
                     ];
 		}
@@ -333,7 +336,7 @@ class Application {
 			throw new \Exception('Default router not found');
 		}
 
-		if (!is_subclass_of($routername, '\\Gelembjuk\\WebApp\\Router')) {
+		if (!is_subclass_of($routername, '\\Gelembjuk\\WebApp\\Router') && $routername != '\\Gelembjuk\\WebApp\\Router') {
 			throw new \Exception('Router must be subclass of \\Gelembjuk\\WebApp\\Router');
 		}
 
@@ -606,6 +609,11 @@ class Application {
 		return true;
 	}
 	protected function getDefaultRouter(){
+        if ($this->defaultroutername == '') {
+            // no any router provided
+            // use defauls router
+            return '\\Gelembjuk\\WebApp\\Router';
+        }
         return $this->defaultroutername;
 	}
 	protected function getDefaultControllerName()
