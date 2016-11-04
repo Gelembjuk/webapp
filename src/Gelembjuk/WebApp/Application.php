@@ -2,7 +2,7 @@
 
 namespace Gelembjuk\WebApp;
 
-abstract class Application {
+class Application {
 	use \Gelembjuk\Logger\ApplicationLogger;
 	use \Gelembjuk\Locale\GetTextTrait;
 	
@@ -19,13 +19,17 @@ abstract class Application {
 	* First router object loaded. It can give some useful info about the application mode
 	*/
 	protected $routerfront = null;
+	protected $defaultroutername = '';
 	protected $actioncontroller;
+	protected $defaultcontrollername = '';
 	protected $cache;
 	
 	protected $localeautoload;
 	protected $config;
 	protected $options;
 	protected $configextra;
+	
+	protected $exceptiononurlmake = true;
 	
 	protected $userid;
 	
@@ -64,12 +68,23 @@ abstract class Application {
 		$this->config = $config;
 		$this->options = $options;
 		
+		// LOGGER =====================================================================================
+		if ($this->options['loggerstandard']) {
+            // this is logger configuration that works fine for most cases
+            $this->options['loggerclass'] = '\\Gelembjuk\\Logger\\FileLogger';
+            $this->options['loggeroptions'] = [
+                    'logfile' => $this->getOption('logdirectory') . 'log.txt',
+                    'groupfilter' => $this->getConfig('loggingfilter')
+                    ];
+		}
+		
 		// set logger
 		if (isset($this->options['logger'])) {
 			$this->logger = $this->options['logger'];
 			unset($this->options['logger']);
 			
 		} elseif (isset($this->options['loggerclass'])) {
+            // create logger
 			if (!class_exists($this->options['loggerclass'])) {
 				throw new \Exception('Logger class ' . $this->options['loggerclass'] . ' not found');
 			}
@@ -79,6 +94,7 @@ abstract class Application {
 			unset($this->options['loggeroptions']);
 		}
 		
+		// ERROR ======================================================================================
 		// set error handler
 		if (isset($this->options['errorhandler'])) {
 			$this->errorhandler = $this->options['errorhandler'];
@@ -101,24 +117,53 @@ abstract class Application {
 			}
 			$this->errorhandler->setViewFormat('html');
 		}
+		// LOCALE ======================================================================================
+		if ($this->options['languagesstandard'] && !$this->checkTranslateObjectIsSet()) {
+            $this->initTranslateObject(
+                array(
+                    'locale' => $this->locale,
+                    'localespath' => $this->getOption('languagespath'))
+                );
+        }
 		
-		if (isset($this->options['applicationnamespace'])) {
+		// COMPONENTS LOCATION ===========================================================================
+		if (isset($this->options['applicationnamespaceprefix'])) {
+            // Use standard model where coponents are sub namespaces with standard names
+            // this works for most cases, including multiple spaces
 			if (!isset($this->options['modelsnamespace'])) {
-				$this->options['modelsnamespace'] = $this->options['applicationnamespace'] . 'Models\\';
+				$this->options['modelsnamespace'] = $this->options['applicationnamespaceprefix'] . 'Models\\';
 			}
 			if (!isset($this->options['controllersnamespace'])) {
-				$this->options['controllersnamespace'] = $this->options['applicationnamespace'] . 'Controllers\\';
+				$this->options['controllersnamespace'] = $this->options['applicationnamespaceprefix'] . 'Controllers\\';
 			}
 			if (!isset($this->options['databasenamespace'])) {
-				$this->options['databasenamespace'] = $this->options['applicationnamespace'] . 'Database\\';
+				$this->options['databasenamespace'] = $this->options['applicationnamespaceprefix'] . 'Database\\';
 			}
 			if (!isset($this->options['viewsnamespace'])) {
-				$this->options['viewsnamespace'] = $this->options['applicationnamespace'] . 'Views\\';
+				$this->options['viewsnamespace'] = $this->options['applicationnamespaceprefix'] . 'Views\\';
 			}
 			if (!isset($this->options['routersnamespace'])) {
-				$this->options['routersnamespace'] = $this->options['applicationnamespace'] . 'Routers\\';
+				$this->options['routersnamespace'] = $this->options['applicationnamespaceprefix'] . 'Routers\\';
 			}
-		}
+		} elseif (isset($this->options['applicationnamespace'])) {
+            // Use simplest approach when components have no sub namespaces and, in fact are in one folder
+            // this works for small applications
+            if (!isset($this->options['modelsnamespace'])) {
+                $this->options['modelsnamespace'] = $this->options['applicationnamespace'];
+            }
+            if (!isset($this->options['controllersnamespace'])) {
+                $this->options['controllersnamespace'] = $this->options['applicationnamespace'];
+            }
+            if (!isset($this->options['databasenamespace'])) {
+                $this->options['databasenamespace'] = $this->options['applicationnamespace'];
+            }
+            if (!isset($this->options['viewsnamespace'])) {
+                $this->options['viewsnamespace'] = $this->options['applicationnamespace'];
+            }
+            if (!isset($this->options['routersnamespace'])) {
+                $this->options['routersnamespace'] = $this->options['applicationnamespace'];
+            }
+        }
 		
         $this->controllerspace = $this->options['controllersnamespace'];
         $this->viewspace = $this->options['viewsnamespace'];
@@ -128,13 +173,12 @@ abstract class Application {
 		
 		$this->options['basehost'] = $this->getBasehost();
 		
-		/*
-		No need in this yet
-		if (isset($this->config->appoptions) && is_array($this->config->appoptions)) {
-			// needed to send some config options to all other classes as one set
-			$this->options = array_merge($this->options,$this->config->appoptions);
+		if (isset($this->options['defaultroutername'])) {
+            $this->defaultroutername = $this->options['defaultroutername'];
 		}
-		*/
+		if (isset($this->options['defaultcontrollername'])) {
+            $this->defaultcontrollername = $this->options['defaultcontrollername'];
+        }
 	}
 	/*
 	* To add some options after init executed
@@ -504,30 +548,38 @@ abstract class Application {
 	}
 	// build urls
 	public function makeUrl($controllername,$opts = array()) {
-        if ($controllername == '') {
-            // try to get currect action controller
-            $curactioncontrollerobject = $this->getActionController();
-            
-            if (is_object($curactioncontrollerobject)) {
-                $controllername = $curactioncontrollerobject;
+        try {
+            if ($controllername == '') {
+                // try to get currect action controller
+                $curactioncontrollerobject = $this->getActionController();
+                
+                if (is_object($curactioncontrollerobject)) {
+                    $controllername = $curactioncontrollerobject;
+                }
             }
-        }
-        
-        // detect if default controller should be used
-        if (!is_object($controllername) && 
-            ($controllername == '' || $controllername == 'def')) {
             
-            $controllername = $this->getDefaultControllerName();
-        }
-	
-	
-		if (is_object($controllername)) {
-			$controller = $controllername;
-		} else {
-			$controller = $this->getController($controllername,true);
+            // detect if default controller should be used
+            if (!is_object($controllername) && 
+                ($controllername == '' || $controllername == 'def')) {
+                
+                $controllername = $this->getDefaultControllerName();
+            }
+        
+        
+            if (is_object($controllername)) {
+                $controller = $controllername;
+            } else {
+                $controller = $this->getController($controllername,true);
+            }
+            
+            return $controller->makeUrl($opts);
+		} catch (\Exception $e) {
+            if ($this->exceptiononurlmake) {
+                throw $e;
+            }
+            // if no error then return empty
+            return '';
 		}
-		
-		return $controller->makeUrl($opts);
 	}
 	// absolute url
 	public function makeAbsUrl($controllername,$opts = array()) {
@@ -553,7 +605,11 @@ abstract class Application {
 	public function profilerAction($type,$time,$string) {
 		return true;
 	}
-	// ================== ABSTRACT =================
-	abstract protected function getDefaultRouter();
-	abstract protected function getDefaultControllerName();
+	protected function getDefaultRouter(){
+        return $this->defaultroutername;
+	}
+	protected function getDefaultControllerName()
+	{
+        return $this->defaultcontrollername;
+	}
 } 
