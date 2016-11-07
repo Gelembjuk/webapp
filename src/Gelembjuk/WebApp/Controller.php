@@ -305,6 +305,9 @@ abstract class Controller {
 		header("Location: $url",true,301);
 		exit;
 	}
+	/**
+	* Return this router name.
+	*/
 	public function getName() {
 		$function = new \ReflectionClass(static::class);
 		return $function->getShortName();
@@ -323,13 +326,19 @@ abstract class Controller {
 	public function getDefModel() {
 		return $this->defmodel;
 	}
-	
+	/**
+	* DO somethign when action complete 
+	*/
 	protected function beforeEnd() {
 	}
+	/**
+	* Do somethign before any action started
+	*/
 	protected function beforeStart() {
 	}
 	/*
-	* Should check if a user is loged in and set user id in the application
+	* Should check if a user is loged in and set user id in the application 
+	* This can be called when each request must be authentificated. No need to cal when straditional web session is used
 	*/
 	protected function initAuthSession() {
 	}
@@ -337,15 +346,24 @@ abstract class Controller {
 	protected function filterRedirect($url,$script = false) {
 		return array($url,$script);
 	}
+	/**
+	* Returns an url of an error view for this controller.
+	* If urls must be built with some specific rules, then this function should be reimplemented in a child class.
+	*/
 	protected function getErrorURI($message) {
-		return ''; // should be defined in child class
+        
+        return $this->makeUrl(array('view'=>'error'));
 	}
-	
+	/**
+	* Get viewer assiiated with this controller
+	*/
 	protected function getViewer($name = '') {
 		if ($name == '') {
 			if ($this->defviewname != '') {
 				$name = $this->defviewname;
 			} else {
+                // if viewer name is not provided then name is same as for controller
+                // but it can be in other name space (controller and viewers can be in different name spaces)
 				$name = $this->getName();
 			}
 		}
@@ -361,14 +379,27 @@ abstract class Controller {
 		$this->viewdata = array();
 		return $data;
 	}
-	public function addViewerData($name,$value) {
+	/**
+    * Add some data to display with a viewer in an end of an action (without redirect)
+    * This is useful for cases when non HTML response is used and controller must return somethign after an action
+	*/
+	public function addViewerData($name,$value) 
+	{
 		$this->viewdata[$name] = $value;
 		$this->logQ('add '.$name.' = '.$value);
 	}
-	protected function getInput($name,$type='string',$default='',$maxlength=0) {
+	/**
+	* Get inmput from a router 
+	*/
+	protected function getInput($name,$type='string',$default='',$maxlength=0) 
+	{
 		return $this->router->getInput($name,$type,$default,$maxlength);
 	}
-	protected function signinRequired($errormessage = '') {
+	/**
+	* Call when an action requires a user is signed in
+	*/
+	protected function signinRequired($errormessage = '') 
+	{
 		if ($this->application->getUserID() == 0) {
 			if ($errormessage == '') {
 				$errormessage = $this->_('Login Required');
@@ -381,11 +412,26 @@ abstract class Controller {
 	* Function helps to build complete urls. It can be used
 	* to add some more arguments to url. For example, some titles/texts for SEO optimization
 	*/
-	protected function completeUrlOpts($opts) {
+	protected function completeUrlOpts($opts) 
+	{
         return $opts;
 	}
-	
-	abstract protected function getRouter();
-	
-	abstract protected function getDefaultURI($message = null);
+	/**
+	* Returns a router for this controller to read input data from it.
+	* This implementation returns a default router of an app.
+	* If the app has more then 1 router then this function can be implemented in a controller class to work differently.
+	*/
+	protected function getRouter() 
+	{
+        return $this->application->getRouter();
+    }
+	/**
+	* Returns a default orl of this controller. This url is used when no other 
+	* redirect url is specified in an end of action.
+	* Reimplement the function in a child class if some other specific lnk should be generated.
+	*/
+	protected function getDefaultURI($message = null) 
+	{
+        return $this->makeUrl(array('message'=>$message));
+    }
 }

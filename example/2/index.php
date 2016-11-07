@@ -30,24 +30,11 @@ $options = array(
 	'htmltemplatesoptions' => array('extension' => 'htm') // our templates will have HTML extension
 );
  
+// ==================== APPLICATION LOGIC ==================================
 // controller class
 class MyController extends \Gelembjuk\WebApp\Controller {
 	// viewer name.
 	protected $defviewname = 'MyViewer';
-	
-	protected function getRouter() {
-		return $this->application->getRouter('MyRouter');
-	}
-	protected function getDefaultURI($message = null) {
-		return $this->makeUrl(array('message'=>$message));
-	}
-	protected function getErrorURI($message) {
-		return $this->makeUrl(array('view'=>'error'));
-	}
-	public function makeUrl($opts = array()) {
-		unset($opts['controller']); // we have only one controller. so don't need this in url
-		return $this->router->makeUrl($opts);
-	}
 
 	// ========= the only action of the controler
 	protected function doSendmessage() {
@@ -95,11 +82,10 @@ class MyViewer extends \Gelembjuk\WebApp\View{
 		
 		if ($this->responseformat == 'html') {
 			// only if this is html format to display
-			if ($this->viewdata['message'] == '') {
-				$this->viewdata['message'] = $this->router->getInput('message');
-			}
-			
+
 			$this->viewdata['applicationtitle'] = 'Demo application';
+			
+			// include more data that should be displayed on any page of a site
 			
 		}
 		return true;
