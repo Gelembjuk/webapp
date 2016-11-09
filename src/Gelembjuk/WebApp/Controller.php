@@ -352,7 +352,7 @@ abstract class Controller {
 	*/
 	protected function getErrorURI($message) {
         
-        return $this->makeUrl(array('view'=>'error'));
+        return $this->makeUrl(array('view'=>'error', 'message' => $message));
 	}
 	/**
 	* Get viewer assiiated with this controller

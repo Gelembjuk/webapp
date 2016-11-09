@@ -178,6 +178,10 @@ abstract class View {
 			$this->viewdata['errormessage'] = $this->router->getInput('message');
 		}
 		
+		if ($this->viewdata['errormessage'] == '') {
+            $this->viewdata['errormessage'] = $this->router->getMessageFromSession();
+        }
+		
 		$this->router->unSetInput('message');
 		
 		$this->viewdata['errorcode'] = $this->router->getInput('errorcode','alpha');
