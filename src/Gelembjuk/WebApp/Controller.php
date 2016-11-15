@@ -18,6 +18,7 @@ abstract class Controller {
 	protected $defviewname = '';
 	protected $viewdata;
 	protected $signinreqired;
+	protected $defaultreaction = null;
 	
 	public function __construct($application,$router = null) {
 		$this->application = $application;
@@ -76,16 +77,35 @@ abstract class Controller {
 					if( $result === false ) {
 						throw new \Exception('Unknown error on DO action');
 					}
+					
+					if ($result === true && $this->defaultreaction['success']) {
+                        $result = $this->defaultreaction['success'];
+                    }
 				} catch (\Exception $exception) {
 					
 					$htmlaction = $this->actionerrordisplay;
 					
 					if ($exception instanceof DoException) {
 						$htmlaction = $exception->getActionOnErrorInHTML($htmlaction);
-					}
-					
-					if ($exception instanceof DoException) {
-						$htmlaction = $exception->getActionOnErrorInHTML($htmlaction);
+					} elseif ($this->defaultreaction) {
+                        $url = $this->defaultreaction['error']['url'];
+                        
+                        if (is_array($url)) {
+                        
+                            if (empty($url['message'])) {
+                                $url['message'] = $exception->getMessage();
+                            }
+                        
+                            $url = $this->makeUrl($url);
+                        }
+                        
+                        $exception = new DoException(
+                            $url,
+                            $exception->getMessage(),
+                            $this->defaultreaction['error']['code'],
+                            $this->defaultreaction['error']['number'],
+                            $this->defaultreaction['error']['htmltype']
+                        );
 					}
 					
 					if ($this->isHTMLResp() && $htmlaction == 'redirect') {
@@ -433,5 +453,10 @@ abstract class Controller {
 	protected function getDefaultURI($message = null) 
 	{
         return $this->makeUrl(array('message'=>$message));
+    }
+    
+    protected function defineReaction($defaultreaction)
+    {
+        $this->defaultreaction = $defaultreaction;
     }
 }
