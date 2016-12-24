@@ -248,7 +248,12 @@ abstract class View {
 		
 		if (!is_array($templatepath)) {
             $templatepath .= $this->getHTMLTemplatesSubFolder();
+		} else {
+            foreach ($templatepath as &$ti) {
+                $ti .= $this->getHTMLTemplatesSubFolder();
+            }
 		}
+		
 		// all options to init html display object
 		$displayoptions = array(
 			'tmpdir' => $this->options['tmproot'],
