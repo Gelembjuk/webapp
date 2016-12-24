@@ -244,12 +244,16 @@ abstract class View {
 		return $displayobject->display();
 	}
 	protected function displayHTML() {
+		$templatepath = $this->options['htmltemplatespath'];
 		
+		if (!is_array($templatepath)) {
+            $templatepath .= $this->getHTMLTemplatesSubFolder();
+		}
 		// all options to init html display object
 		$displayoptions = array(
 			'tmpdir' => $this->options['tmproot'],
 			'templatingclass' => $this->options['templatingclass'],
-			'templatepath' => $this->options['htmltemplatespath'] . $this->getHTMLTemplatesSubFolder(),
+			'templatepath' => $templatepath,
 			'templatesoptions' => $this->options['htmltemplatesoptions'],
 			'template' => $this->htmltemplate,
 			'view' => $this->getViewFolderName(),
