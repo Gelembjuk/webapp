@@ -14,6 +14,16 @@ class Application {
 	protected $models;
 	protected $controllers;
 	protected $routers;
+	
+	/*
+	* Mocks for objects
+	*/
+	protected $dbobjectsready = [];
+    protected $dbenginesready = [];
+    protected $modelsready = [];
+    protected $controllersready = [];
+    protected $routersready = [];
+    protected $viewsready = [];
 	/**
 	* @var
 	* First router object loaded. It can give some useful info about the application mode
@@ -270,6 +280,11 @@ class Application {
 			throw new \Exception('Controller must be subclass of \\Gelembjuk\\WebApp\\Controller');
 		}
 		
+		// this is for mocking on testing
+		if (array_key_exists($controllerpath,$this->controllersready)) {
+            return $this->controllersready[$controllerpath];
+		}
+		
 		if (!$alwayscreatenew && isset($this->controllers[$controllerpath])) {
             return $this->controllers[$controllerpath];
         }
@@ -339,6 +354,11 @@ class Application {
 		if (!is_subclass_of($routername, '\\Gelembjuk\\WebApp\\Router') && $routername != '\\Gelembjuk\\WebApp\\Router') {
 			throw new \Exception('Router must be subclass of \\Gelembjuk\\WebApp\\Router');
 		}
+		
+		// this is for mocking on testing
+        if (array_key_exists($routername,$this->routersready)) {
+            return $this->routersready[$routername];
+        }
 
 		$this->logQ('Make Router '.$routername,'application');
 		
@@ -398,6 +418,11 @@ class Application {
 			throw new \Exception('DB Engine must be subclass of \\\Gelembjuk\\DB\\EngineInterface');
 		}
 		
+		// this is for mocking on testing
+        if (array_key_exists($engineclass,$this->dbenginesready)) {
+            return $this->dbenginesready[$engineclass];
+        }
+		
 		$options['application'] = $this;
 		
 		$object = new $engineclass($options);
@@ -436,6 +461,11 @@ class Application {
 			throw new \Exception('DB Object must be subclass of \\Gelembjuk\\DB\\Base');
 		}
 		
+		// this is for mocking on testing
+        if (array_key_exists($classpath,$this->dbobjectsready)) {
+            return $this->dbobjectsready[$classpath];
+        }
+		
 		$this->logQ('Make DBO '.$name,'application');
 		
 		$object = new $classpath($engine,$this);
@@ -473,6 +503,11 @@ class Application {
 			throw new \Exception('Model must be subclass of \\Gelembjuk\\WebApp\\Model');
 		}
 		
+		// this is for mocking on testing
+        if (array_key_exists($classpath,$this->modelsready)) {
+            return $this->modelsready[$classpath];
+        }
+		
 		$object = new $classpath($this,$options);
 		
 		$this->models[$name.$modelkey] = $object;
@@ -501,6 +536,11 @@ class Application {
 		if (!is_subclass_of($classpath, '\\Gelembjuk\\WebApp\\View')) {
 			throw new \Exception('Model must be subclass of \\Gelembjuk\\WebApp\\View');
 		}
+		
+		// this is for mocking on testing
+        if (array_key_exists($classpath,$this->viewsready)) {
+            return $this->viewsready[$classpath];
+        }
 		
 		$object = new $classpath($this,$router,$controller,$this->options);
 		$object->init();
@@ -619,5 +659,52 @@ class Application {
 	protected function getDefaultControllerName()
 	{
         return $this->defaultcontrollername;
+	}
+	
+	public function setStandardClassObjectReady($object, $type, $classname)
+	{
+        if ($type == 'controller') {
+            $this->controllersready[$classname] = $object;
+            
+        } elseif ($type == 'model') {
+            $this->modelsready[$classname] = $object;
+            
+        } elseif ($type == 'dbobject') {
+            $this->dbobjectsready[$classname] = $object;
+            
+        } elseif ($type == 'dbengine') {
+            $this->dbenginesready[$classname] = $object;
+            
+        } elseif ($type == 'router') {
+            $this->routersready[$classname] = $object;
+            
+        } elseif ($type == 'view') {
+            $this->viewsready[$classname] = $object;
+        } 
+        
+        return true;
+	}
+	public function removeStandardClassObjectReady($type, $classname)
+	{
+        if ($type == 'controller') {
+            unset($this->controllersready[$classname]);
+            
+        } elseif ($type == 'model') {
+            unset($this->modelsready[$classname]);
+            
+        } elseif ($type == 'dbobject') {
+            unset($this->dbobjectsready[$classname]);
+            
+        } elseif ($type == 'dbengine') {
+            unset($this->dbenginesready[$classname]);
+            
+        } elseif ($type == 'router') {
+            unset($this->routersready[$classname]);
+            
+        } elseif ($type == 'view') {
+            unset($this->viewsready[$classname]);
+        } 
+        
+        return true;
 	}
 } 
