@@ -343,6 +343,11 @@ class Application {
 			$routername = $this->getRouterFullClass($defroutername);
 		}
 		
+		// this is for mocking on testing
+        if (array_key_exists($routername,$this->routersready)) {
+            return $this->routersready[$routername];
+        }
+		
 		if (!$alwayscreatenew && $routername != '' && isset($this->routers[$routername])) {
 			return $this->routers[$routername];
 		}
@@ -355,11 +360,6 @@ class Application {
 			throw new \Exception('Router must be subclass of \\Gelembjuk\\WebApp\\Router');
 		}
 		
-		// this is for mocking on testing
-        if (array_key_exists($routername,$this->routersready)) {
-            return $this->routersready[$routername];
-        }
-
 		$this->logQ('Make Router '.$routername,'application');
 		
 		$router = new $routername($this,$this->options);
@@ -388,6 +388,11 @@ class Application {
 		if ($profile == '') {
 			$profile = 'default';
 		}
+		
+		// this is for mocking on testing
+        if (array_key_exists($engineclass,$this->dbenginesready)) {
+            return $this->dbenginesready[$engineclass];
+        }
 		
 		if (isset($this->dbengines[$profile])) {
 			return $this->dbengines[$profile];
@@ -418,11 +423,6 @@ class Application {
 			throw new \Exception('DB Engine must be subclass of \\\Gelembjuk\\DB\\EngineInterface');
 		}
 		
-		// this is for mocking on testing
-        if (array_key_exists($engineclass,$this->dbenginesready)) {
-            return $this->dbenginesready[$engineclass];
-        }
-		
 		$options['application'] = $this;
 		
 		$object = new $engineclass($options);
@@ -432,7 +432,13 @@ class Application {
 		return $object;
 	}
 	
-	public function getDBO($name,$profile = 'default') {		
+	public function getDBO($name,$profile = 'default') {	
+        // this is for mocking on testing
+        $classpath = $this->getDBOFullClass($name);
+        if (array_key_exists($classpath,$this->dbobjectsready)) {
+            return $this->dbobjectsready[$classpath];
+        }
+        
 		if (isset($this->dbobjects[$name.'_'.$profile])) {
 			return $this->dbobjects[$name.'_'.$profile];
 		}
@@ -453,6 +459,11 @@ class Application {
 		
 		$classpath = $this->getDBOFullClass($name);
 
+		// this is for mocking on testing
+        if (array_key_exists($classpath,$this->dbobjectsready)) {
+            return $this->dbobjectsready[$classpath];
+        }
+		
 		if (!class_exists($classpath)) {
 			throw new \Exception(sprintf('DB class %s not found',$classpath));
 		}
@@ -460,11 +471,6 @@ class Application {
 		if (!is_subclass_of($classpath, '\\Gelembjuk\\DB\\Base')) {
 			throw new \Exception('DB Object must be subclass of \\Gelembjuk\\DB\\Base');
 		}
-		
-		// this is for mocking on testing
-        if (array_key_exists($classpath,$this->dbobjectsready)) {
-            return $this->dbobjectsready[$classpath];
-        }
 		
 		$this->logQ('Make DBO '.$name,'application');
 		
@@ -706,5 +712,14 @@ class Application {
         } 
         
         return true;
+	}
+	public function removeAllStandardClassObjectReady()
+	{
+        $this->controllersready = [];
+        $this->modelsready = [];
+        $this->dbobjectsready = [];
+        $this->dbenginesready = [];
+        $this->routersready = [];
+        $this->viewsready = [];
 	}
 } 
