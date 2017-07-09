@@ -722,4 +722,21 @@ class Application {
         $this->routersready = [];
         $this->viewsready = [];
 	}
+	/*
+	* Assign application reference to given object. The object must use the Trait Context
+	*/
+	public function bless(&$object)
+	{
+        $object->setApplication($this);
+	}
+	/*
+	* Create new object and set application to it.
+	* The class must use the trait Context
+	*/
+	public function newBlessed($class)
+	{
+        $object = new $class();
+        $object->setApplication($this);
+        return $object;
+	}
 } 

@@ -24,4 +24,11 @@ abstract class Model {
 	protected function getUserID() {
 		return $this->application->getUserID();
 	}
+	/*
+	* Shortcut for blessed objects creator function. 
+	*/
+	protected function newBlessed($class)
+    {
+        return $this->application->newBlessed($class);
+    }
 }
