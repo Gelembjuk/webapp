@@ -139,7 +139,7 @@ class Router {
 	public function getInput($name,$filter = 'string', $default = '', $maxlength = 0) {
 		
 		if ($filter == 'file') {
-			if (isset($this->files[$name])) {
+			if (isset($this->files[$name]) && $this->files[$name]['name'] != '') {
 				return $this->files[$name];
 			}
 			
@@ -283,13 +283,19 @@ class Router {
 		return $_SERVER['REQUEST_URI'];
 	}
 
+	public function getRequestHostName()
+	{
+        $hostinfo = new \Gelembjuk\WebApp\Server\Host();
+        return $hostinfo->getRequestHost();
+    }
+	
 	public function getActionInfo() {
 		return array($this->actiontype,$this->actionmethod,$this->responseformat);
 	}
 	public function makeAbsoluteUrl($opts = array()) {
-		$relurl = $this->makeUrl($opts);
+		$relurl = $this->application->makeUrl($opts);
 		
-		$baseurl = $this->getBasehost();
+		$baseurl = $this->appliation->getBasehost();
 		
 		return $baseurl.$relurl;
 	}
