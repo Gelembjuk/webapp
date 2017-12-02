@@ -632,10 +632,14 @@ class Application {
 	}
 	// absolute url
 	public function makeAbsUrl($controllername,$opts = array()) {
+        if (isset($opts['basehost'])) {
+            $baseurl = $opts['basehost'];
+            unset($opts['basehost']);
+        } else {
+            $baseurl = $this->getBasehost();
+        }
         
         $relativeurl = $this->makeUrl($controllername,$opts);
-        
-        $baseurl = $this->getBasehost();
         
         if (substr($baseurl,-1) == '/' && substr($relativeurl,0,1) == '/') {
             $relativeurl = substr($relativeurl,1);
