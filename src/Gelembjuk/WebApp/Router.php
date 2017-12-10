@@ -73,6 +73,27 @@ class Router {
 		
 		if (!is_array($this->files)) {
 			$this->files = array();
+		} else {
+            foreach ($this->files as $file => $data) {
+                if (is_array($data['name'])) {
+                    $files = [];
+                    
+                    for ($i = 0; $i < count($data['name']); $i++) {
+                        if (empty($data['name'][$i])) {
+                            continue;
+                        }
+                        $files[] = array(
+                            'name' => $data['name'][$i],
+                            'type' => $data['type'][$i],
+                            'tmp_name' => $data['tmp_name'][$i],
+                            'error' => $data['error'][$i],
+                            'size' => $data['size'][$i],
+                            );
+                    }
+                    
+                    $this->files[$file] = $files;
+                }
+            }
 		}
 		
 		return true;
@@ -145,6 +166,14 @@ class Router {
 			
 			return null;
 		}
+		
+		if ($filter == 'filelist') {
+            if (isset($this->files[$name]) && is_array($this->files[$name]) && isset($this->files[$name][0]['name'])) {
+                return $this->files[$name];
+            }
+            
+            return null;
+        }
 		
 		$v = $this->input[$name];
 		
