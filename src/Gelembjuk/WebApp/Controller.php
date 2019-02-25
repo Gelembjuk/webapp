@@ -4,6 +4,7 @@ namespace Gelembjuk\WebApp;
 
 use \Gelembjuk\WebApp\Exceptions\ViewException as ViewException;
 use \Gelembjuk\WebApp\Exceptions\DoException as DoException;
+use \Gelembjuk\WebApp\Exceptions\FormException as FormException;
 
 abstract class Controller {
 	use \Gelembjuk\Logger\ApplicationLogger;
@@ -85,8 +86,14 @@ abstract class Controller {
 					
 					$htmlaction = $this->actionerrordisplay;
 					
+					if ($exception instanceof FormException) {
+                        // convert to do exception but get affected input 
+                        $this->addViewerData('input',$exception->getInput());
+					}
+					
 					if ($exception instanceof DoException) {
 						$htmlaction = $exception->getActionOnErrorInHTML($htmlaction);
+						
 					} elseif ($this->defaultreaction) {
                         $url = $this->defaultreaction['error']['url'];
                         
