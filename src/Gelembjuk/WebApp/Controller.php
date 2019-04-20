@@ -4,7 +4,7 @@ namespace Gelembjuk\WebApp;
 
 use \Gelembjuk\WebApp\Exceptions\ViewException as ViewException;
 use \Gelembjuk\WebApp\Exceptions\DoException as DoException;
-use \Gelembjuk\WebApp\Exceptions\FormException as FormException;
+use \Gelembjuk\WebApp\Exceptions\NotAuthorizedException as NotAuthorizedException;
 
 abstract class Controller {
 	use \Gelembjuk\Logger\ApplicationLogger;
@@ -86,14 +86,8 @@ abstract class Controller {
 					
 					$htmlaction = $this->actionerrordisplay;
 					
-					if ($exception instanceof FormException) {
-                        // convert to do exception but get affected input 
-                        $this->addViewerData('input',$exception->getInput());
-					}
-					
 					if ($exception instanceof DoException) {
 						$htmlaction = $exception->getActionOnErrorInHTML($htmlaction);
-						
 					} elseif ($this->defaultreaction) {
                         $url = $this->defaultreaction['error']['url'];
                         
@@ -250,7 +244,7 @@ abstract class Controller {
 					$this->router->setInput('errormessage',$exception->getMessage());
 					$this->router->setInput('errornumber',$exception->getCode());
 					
-					if ($exception instanceof ViewException) {
+					if ($exception instanceof ViewException || $exception instanceof NotAuthorizedException) {
 						$this->router->setInput('errorcode',$exception->getTextCode());
 					}
 					
