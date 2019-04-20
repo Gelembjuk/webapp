@@ -73,27 +73,6 @@ class Router {
 		
 		if (!is_array($this->files)) {
 			$this->files = array();
-		} else {
-            foreach ($this->files as $file => $data) {
-                if (is_array($data['name'])) {
-                    $files = [];
-                    
-                    for ($i = 0; $i < count($data['name']); $i++) {
-                        if (empty($data['name'][$i])) {
-                            continue;
-                        }
-                        $files[] = array(
-                            'name' => $data['name'][$i],
-                            'type' => $data['type'][$i],
-                            'tmp_name' => $data['tmp_name'][$i],
-                            'error' => $data['error'][$i],
-                            'size' => $data['size'][$i],
-                            );
-                    }
-                    
-                    $this->files[$file] = $files;
-                }
-            }
 		}
 		
 		return true;
@@ -167,14 +146,6 @@ class Router {
 			return null;
 		}
 		
-		if ($filter == 'filelist') {
-            if (isset($this->files[$name]) && is_array($this->files[$name]) && isset($this->files[$name][0]['name'])) {
-                return $this->files[$name];
-            }
-            
-            return null;
-        }
-		
 		$v = $this->input[$name];
 		
 		if (empty($v)) {
@@ -219,10 +190,6 @@ class Router {
 		if ($filter=='int' || $filter=='integer') {
 			$v = strval(intval($v));
 		}
-		
-		if ($filter=='float') {
-            $v = strval(floatval($v));
-        }
 		
 		if ($filter == 'nohtml' || $filter == 'plainline') {
 			$v = preg_replace('!<.*?>!','',$v);
@@ -306,9 +273,12 @@ class Router {
 
 		return $data;
 	}
-	protected function getHTTPHeader($header) {
-		if (isset($_SERVER['HTTP_'.strtoupper($header)])) {
-			return $_SERVER['HTTP_'.strtoupper($header)];
+	public function getHTTPHeader($header) 
+	{
+        $phpheader = 'HTTP_'.strtoupper(str_replace('-','_',$header));
+        
+		if (isset($_SERVER[$phpheader])) {
+			return $_SERVER[$phpheader];
 		}
 		return '';
 	}
