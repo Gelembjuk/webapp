@@ -28,6 +28,8 @@ abstract class View {
 	protected $options;
 	protected $application;
 	
+	protected $defaultouttemplatename = 'default';
+	
 	public function __construct($application,$router,$controller = null,$options = array()) {
 		$this->application = $application;
 		$this->router = $router;
@@ -263,7 +265,7 @@ abstract class View {
 			'template' => $this->htmltemplate,
 			'view' => $this->getViewFolderName(),
 			'controller' => $this->router->getController(),
-			'outtemplate' => $this->router->getInput('outtmpl','alpha','default'),
+			'outtemplate' => $this->router->getInput('outtmpl','alpha',$this->defaultouttemplatename),
 			'outtemplate_force' => $this->htmlouttemplate_force,
 			'noouttemplate' => $this->htmlouttemplate_disable,
 			'headerssent' => $this->headerssent,
