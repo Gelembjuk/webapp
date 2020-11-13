@@ -396,7 +396,6 @@ abstract class Controller {
 	}
 	public function shiftViewerData() {
 		$data = $this->viewdata;
-		$this->logQ('return '.print_r($data,true));
 		$this->viewdata = array();
 		return $data;
 	}
@@ -407,7 +406,6 @@ abstract class Controller {
 	public function addViewerData($name,$value) 
 	{
 		$this->viewdata[$name] = $value;
-		$this->logQ('add '.$name.' = '.$value);
 	}
 	/**
 	* Get inmput from a router 

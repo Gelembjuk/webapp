@@ -289,8 +289,6 @@ class Application {
             return $this->controllers[$controllerpath];
         }
 
-		$this->logQ('Make Controller '.$controllerpath,'application');
-		
 		$controller = new $controllerpath($this,$router);
 		
 		$controller->init();
@@ -359,8 +357,6 @@ class Application {
 		if (!is_subclass_of($routername, '\\Gelembjuk\\WebApp\\Router') && $routername != '\\Gelembjuk\\WebApp\\Router') {
 			throw new \Exception('Router must be subclass of \\Gelembjuk\\WebApp\\Router');
 		}
-		
-		$this->logQ('Make Router '.$routername,'application');
 		
 		$router = new $routername($this,$this->options);
 		
@@ -472,8 +468,6 @@ class Application {
 			throw new \Exception('DB Object must be subclass of \\Gelembjuk\\DB\\Base');
 		}
 		
-		$this->logQ('Make DBO '.$name,'application');
-		
 		$object = new $classpath($engine,$this);
 		
 		$this->dbobjects[$name.'_'.$profile] = $object;
@@ -497,8 +491,6 @@ class Application {
 			return $this->models[$name.$modelkey];
 		}
 
-		$this->logQ('Make Model '.$name,'application');
-		
 		$classpath = $this->getModelFullClass($name);
 
 		if (!class_exists($classpath)) {
