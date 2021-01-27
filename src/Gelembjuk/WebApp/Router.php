@@ -114,9 +114,25 @@ class Router {
 		
 		foreach (explode('&',$query) as $pair){
 			list($key,$val) = explode('=',$pair);
-			$this->input[$key] = $val;
+			
+			if (preg_match('!^(.+)\\[(.*?)\\]$!', $key, $m)) {
+                // array emulation 
+                $key = $m[1];
+                
+                if (!is_array($this->input[$key])) {
+                    $this->input[$key] = [];
+                }
+                $keyind = $m[2];
+                
+                if ($keyind == '') {
+                    $this->input[$key][] = $val;
+                } else {
+                    $this->input[$key][$keyind] = $val;
+                }
+			} else {
+                $this->input[$key] = $val;
+			}
 		}
-
 	}
 	public function setInput($name,$value) {
 		$this->input[$name] = $value;
@@ -189,19 +205,6 @@ class Router {
 		
 		if ($filter=='int' || $filter=='integer') {
 			$v = strval(intval($v));
-		}
-		
-		if ($filter == 'string') {
-            if (is_array($v)) {
-                $v = '';
-            } elseif (!is_string($v)) {
-                $v = strval($v);
-            }
-		}
-		
-		if ($filter=='float') {
-            $v = str_replace(',','.',$v);
-			$v = strval(floatval($v));
 		}
 		
 		if ($filter == 'nohtml' || $filter == 'plainline') {
