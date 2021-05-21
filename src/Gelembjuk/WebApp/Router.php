@@ -207,6 +207,10 @@ class Router {
 			$v = strval(intval($v));
 		}
 		
+		if ($filter=='float' || $filter=='double') {
+			$v = strval(floatval($v));
+		}
+		
 		if ($filter == 'nohtml' || $filter == 'plainline') {
 			$v = preg_replace('!<.*?>!','',$v);
 		}
