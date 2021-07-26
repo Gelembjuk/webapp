@@ -29,6 +29,8 @@ abstract class View {
 	protected $application;
 	
 	protected $defaultouttemplatename = 'default';
+	protected $deepCacheKey = '';
+	protected $deepCacheData = null;
 	
 	public function __construct($application,$router,$controller = null,$options = array()) {
 		$this->application = $application;
@@ -95,6 +97,11 @@ abstract class View {
 			return $result;
 		}
 		
+		if ($this->deepCacheKey != '') {
+            // check if something is in the cache 
+            
+        }
+		
 		// prepare some extra data to display
 		$this->beforeDisplay();
 		
@@ -108,9 +115,9 @@ abstract class View {
 		if( !method_exists($this,$displaymethodname) ) {
 			$displaymethodname = 'displayHTML';
 		}
-		
+
 		$result = $this->$displaymethodname();
-		
+
 		return true;
 	}
 	// default view is abstract to force to have it in child classes
@@ -223,7 +230,27 @@ abstract class View {
 		
 		return true;
 	}
-	
+	protected function setDeepCacheKey($key = '')
+    {
+        $key = preg_replace('![^A-Za-z0-9_]!','',$key);
+		
+		if (empty($key)) {
+			return false;
+		}
+		$format = (!empty($this->responseformat))?$this->responseformat:'html';
+		$this->deepCacheKey = 'deepviewcache_'.$format.'_'.$key;
+		
+		$cacheItem = $this->application->cachePool()->getItem($this->deepCacheKey);
+		
+		$data = $cacheItem->get();
+		
+		if (is_array($data)) {
+			$this->deepCacheData = $data;
+			return true;
+		}
+		
+		return false;
+	}
 	protected function displayWithObject($class,$altoption,$displayoptions = array()) {
 		
 		if (isset($this->options[$altoption])) {
@@ -236,6 +263,11 @@ abstract class View {
 		
 		$displayoptions['status'] = $this->viewstatus;
 		$displayoptions['statuscode'] = $this->viewstatuscode;
+		
+		if (!empty($this->deepCacheKey)) {
+            $displayoptions['cachekey'] = $this->deepCacheKey;
+            $displayoptions['cachedata'] = $this->deepCacheData;
+		}
 		
 		$displayobject = new $class($this->application);
 		

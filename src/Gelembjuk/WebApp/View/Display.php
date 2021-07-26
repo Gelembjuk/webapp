@@ -6,6 +6,8 @@ abstract class Display {
 	protected $options;
 	protected $data;
 	protected $application;
+	protected $deepCacheKey = '';
+	
 	public function __construct($application = null) {
 		$this->application = $application;
 	}
@@ -14,6 +16,16 @@ abstract class Display {
 	}
 	public function setData($data) {
 		return true;
+	}
+	protected function cacheData($data, $expiration = 3600)
+	{
+        if (empty($this->deepCacheKey)) {
+            return ;
+        }
+        $cacheItem = $this->application->cachePool()->getItem($this->deepCacheKey);
+        $cacheItem->set($data);
+		$cacheItem->expiresAfter($expiration);
+		$this->application->cachePool()->save($cacheItem);
 	}
 	public function requireSettings() {
 		if (!is_array($this->data)) {

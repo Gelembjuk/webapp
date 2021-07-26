@@ -5,7 +5,9 @@ namespace Gelembjuk\WebApp\View;
 class HTML extends Display {
 
 	public function init($options) {
-		
+		if (!empty($options['cachekey'])) {
+            $this->deepCacheKey = $options['cachekey'];
+		}
 		if ($options['outtemplate_force'] != '') {
 			$options['outtemplate'] = $options['outtemplate_force'];
 		}
@@ -106,7 +108,15 @@ class HTML extends Display {
 		return true;
 	}
 	public function display() {
-		$html = $this->getHTML();
+        $cache = true;
+        
+        if (is_array($this->options['cachedata'])) {
+            $html = $this->options['cachedata'][1];
+            $this->options = array_merge($this->options, $this->options['cachedata'][0]);
+            $cache = false;
+        } else {
+            $html = $this->getHTML();
+		}
 		if (!$this->options['headerssent']) {
 			
 			if ($this->options['statuscode'] > 0 && $this->options['statuscode'] != 200) {
@@ -119,6 +129,10 @@ class HTML extends Display {
 			header('Content-Type: text/html; charset=utf-8');
 		}
 		echo $html;
+		
+		if ($cache) {
+            $this->cacheData([$this->options, $html]);
+		}
 		return true;
 	}
 	protected function getHTML() {
