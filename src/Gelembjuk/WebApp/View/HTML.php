@@ -5,9 +5,8 @@ namespace Gelembjuk\WebApp\View;
 class HTML extends Display {
 
 	public function init($options) {
-		if (!empty($options['cachekey'])) {
-            $this->deepCacheKey = $options['cachekey'];
-		}
+        parent::init($options);
+        
 		if ($options['outtemplate_force'] != '') {
 			$options['outtemplate'] = $options['outtemplate_force'];
 		}

@@ -4,6 +4,8 @@ namespace Gelembjuk\WebApp\View;
 
 class JSON extends Display {
 	public function init($options) {
+        parent::init($options);
+        
 		if (!isset($options['status']) || $options['status'] == '') {
 			$options['status'] = 'ok';
 		}
@@ -16,6 +18,16 @@ class JSON extends Display {
 		return true;
 	}
 	public function display() {
+        if (is_array($this->options['cachedata'])) {
+            if (!empty($this->options['cachedata'][1])) {
+                header($this->options['cachedata'][1]);
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo $this->options['cachedata'][0];
+            return true;
+        }
+		
 		$this->requireSettings();
 		
 		$responsecode = 200;
@@ -30,13 +42,19 @@ class JSON extends Display {
 
 		$displaydata = $this->prepareResponseStructure();
 		
+		$htmlheader = '';
+		
 		if ($responsecode != 200) {
 			$http = new HTTP();
 			$message = $http->getMessageForCode($responsecode);
-			header("HTTP/1.0 ".$responsecode." ".$message);
+            $htmlheader = "HTTP/1.0 ".$responsecode." ".$message;
+			header($htmlheader);
 		}
 		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode($displaydata);
+		$output = json_encode($displaydata);
+		echo $output;
+		
+		$this->cacheData([$output, $htmlheader]);
 		return true;
 	}
 	

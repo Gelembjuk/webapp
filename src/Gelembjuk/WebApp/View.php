@@ -30,6 +30,7 @@ abstract class View {
 	
 	protected $defaultouttemplatename = 'default';
 	protected $deepCacheKey = '';
+	protected $deepCacheKeyExpiration = 3600;
 	protected $deepCacheData = null;
 	
 	public function __construct($application,$router,$controller = null,$options = array()) {
@@ -230,7 +231,7 @@ abstract class View {
 		
 		return true;
 	}
-	protected function setDeepCacheKey($key = '')
+	protected function setDeepCacheKey($key = '', $expiraton = 3600)
     {
         $key = preg_replace('![^A-Za-z0-9_]!','',$key);
 		
@@ -239,6 +240,8 @@ abstract class View {
 		}
 		$format = (!empty($this->responseformat))?$this->responseformat:'html';
 		$this->deepCacheKey = 'deepviewcache_'.$format.'_'.$key;
+		
+		$this->deepCacheKeyExpiration = $expiraton;
 		
 		$cacheItem = $this->application->cachePool()->getItem($this->deepCacheKey);
 		
@@ -266,6 +269,7 @@ abstract class View {
 		
 		if (!empty($this->deepCacheKey)) {
             $displayoptions['cachekey'] = $this->deepCacheKey;
+            $displayoptions['cachekeyexp'] = $this->deepCacheKeyExpiration;
             $displayoptions['cachedata'] = $this->deepCacheData;
 		}
 		

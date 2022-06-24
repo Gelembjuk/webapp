@@ -178,13 +178,6 @@ class Router {
 			}
 		}
 		
-		if ($filter != 'array' && $v != '' && get_magic_quotes_gpc() == 1) {
-			if (is_array($v)) {
-				$v = $v[0];
-			}
-			$v = stripslashes($v);
-		}
-		
 		if (empty($v)) {
 			$v = $default;
 		}
