@@ -42,6 +42,8 @@ class Application {
 	protected $exceptiononurlmake = true;
 	
 	protected $userid;
+
+	protected $requestUniqueID;
 	
 	/**
 	* Class paces for MVC model components
@@ -64,17 +66,22 @@ class Application {
 		$this->views = array();
 		$this->controllers = array();
 		$this->localeautoload = false;
+
+		$this->requestUniqueID = substr(md5(uniqid()),0,15);
 	}
 	public static function getInstance() {
 		$class = get_called_class();
 		
-		if (!self::$instance[$class]) {
+		if (!is_array(self::$instance)) {
+			self::$instance = [];
+		}
+		if (!isset( self::$instance[$class] )) {
 			self::$instance[$class] = new static();
 		}
 		return self::$instance[$class];
 	}
 	
-	public function init($config,$options = array()) {
+	public function init($config,$options = []) {
 		$this->config = $config;
 		$this->options = $options;
 		
@@ -87,7 +94,8 @@ class Application {
             
             $this->options['loggeroptions'] = [
                     'logfile' => $logdir . 'log.txt',
-                    'groupfilter' => $this->getConfig('loggingfilter')
+                    'groupfilter' => $this->getConfig('loggingfilter'),
+					'requestid' => $this->getRequestUnieueID()
                     ];
 		}
 		
@@ -192,6 +200,10 @@ class Application {
 		if (isset($this->options['defaultcontrollername'])) {
             $this->defaultcontrollername = $this->options['defaultcontrollername'];
         }
+	}
+	public function getRequestUnieueID() 
+	{
+		return $this->requestUniqueID;
 	}
 	/*
 	* To add some options after init executed
@@ -546,7 +558,10 @@ class Application {
 		return $object;
 	}
 	public function getConfig($name) {
-		return $this->config->$name;
+		if (property_exists($this->config, $name)) {
+			return $this->config->$name;
+		}
+		return null;
 	}
 	public function getConfigExtra($name) {
 		if ($this->configextra == null) {
