@@ -439,10 +439,6 @@ class Router {
             $this->actiontype = 'do';
             $this->actionmethod = $this->getInput('do','alpha');
             
-        } elseif ($this->getInput('redirect','plaintext') != '') {
-            // redirect to other page
-            $this->actiontype = 'redirect';
-            $this->actionmethod = $this->getInput('redirect','plaintext');
         } else {
             // display default page
             $this->actiontype = 'view';
