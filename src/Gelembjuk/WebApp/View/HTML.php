@@ -7,6 +7,11 @@ class HTML extends Display {
 	public function init($options) {
         parent::init($options);
         
+        if (is_array($options['cachedata'])) {
+            $this->options = $options;
+            return true;
+        }
+
 		if ($options['outtemplate_force'] != '') {
 			$options['outtemplate'] = $options['outtemplate_force'];
 		}
@@ -108,7 +113,7 @@ class HTML extends Display {
 	}
 	public function display() {
         $cache = true;
-        
+
         if (is_array($this->options['cachedata'])) {
             $html = $this->options['cachedata'][1];
             $this->options = array_merge($this->options, $this->options['cachedata'][0]);
@@ -127,6 +132,7 @@ class HTML extends Display {
 			
 			header('Content-Type: text/html; charset=utf-8');
 		}
+		
 		echo $html;
 		
 		if ($cache) {

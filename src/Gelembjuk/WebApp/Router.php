@@ -319,11 +319,13 @@ class Router {
 		$function = new \ReflectionClass(static::class);
 		return $function->getShortName();
 	}
-	public function setErrorPage($message,$code = '',$number = 0) {
+	public function setErrorPage($message,$code = '',$number = 0, $responseformat = '') 
+	{
 		$this->setInput('view','error');
 		$this->setInput('errormessage',$message);
 		$this->setInput('errorcode',$code);
 		$this->setInput('errornumber',$number);
+		$this->setInput('responseformat',$responseformat);
 		$this->setUpActionInfo();
 	}
 	public function dumpInput() {

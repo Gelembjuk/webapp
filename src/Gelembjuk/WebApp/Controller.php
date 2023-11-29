@@ -131,13 +131,13 @@ abstract class Controller {
 					
 						$this->addViewerData('errortrace',$exception->getTraceAsString());
 						
-						$this->router->setErrorPage($exception->getMessage(),$code,$exception->getCode());
+						$this->router->setErrorPage($exception->getMessage(),$code,$exception->getCode(), $this->responseformat);
 						list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
 					}
 				}
 				
 				if( is_array($result) ) {
-
+					
 					list($actiontype,$actionmethod,$responseformat) = $result;
 					
 					// this is short way to return universal 'success' for html and other type of response formats

@@ -12,6 +12,7 @@ class Application {
 	protected $dbobjects;
 	protected $dbengines;
 	protected $models;
+	protected $views;
 	protected $controllers;
 	protected $routers;
 	
