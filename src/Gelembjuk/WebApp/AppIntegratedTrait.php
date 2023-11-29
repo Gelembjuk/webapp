@@ -27,6 +27,17 @@ trait AppIntegratedTrait {
     * @var Gelembjuk\WebApp\Applicaion
     */
     protected $application;
+
+    /**
+     * Standard constructor. Will work fine in most of cases
+     */
+
+    public function __construct($application = null) 
+    {
+        if ($application) {
+            $this->setApplication($application);
+        }
+    }
     
     /**
      * Set application object function. It is required to call it before using any methods inherited from this trait

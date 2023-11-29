@@ -13,3 +13,7 @@ example/2/vendor/*
 example/2/tmp/templates_c/
 example/2/tmp/templates_c/*
 example/2/tmp/log.txt
+
+
+.DS_Store
+*/.DS_Store
