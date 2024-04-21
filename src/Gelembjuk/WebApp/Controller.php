@@ -9,20 +9,27 @@ use \Gelembjuk\WebApp\Exceptions\NotAuthorizedException as NotAuthorizedExceptio
 abstract class Controller {
 	use \Gelembjuk\Logger\ApplicationLogger;
 	use \Gelembjuk\Locale\GetTextTrait;
+	use FabricTrait;
 	
 	protected $router;
 	protected $responseformat;
 	protected $actionerrordisplay = 'redirect';
-	protected $application;
+
+	// for older style 
 	protected $defmodelname;
 	protected $defmodel;
+
+	// for older style 
+	protected $def_pool = null;
+	protected $def_objects_pool_name = null;
+
 	protected $defviewname = '';
 	protected $viewdata;
 	protected $signinreqired;
 	protected $defaultreaction = null;
 	
 	public function __construct($application,$router = null) {
-		$this->application = $application;
+		$this->setApplication($application);
 		$this->router = $router;
 		
 		$this->viewdata = array();
@@ -33,6 +40,9 @@ abstract class Controller {
 		
 		if ($this->defmodelname != '') {
 			$this->defmodel = $this->application->getModel($this->defmodelname);
+		}
+		if ($this->def_objects_pool_name != '') {
+			$this->def_pool = $this->single($this->def_objects_pool_name);
 		}
 		
 		$this->signinreqired = false;
@@ -344,8 +354,14 @@ abstract class Controller {
 	* Get native model of this controller
 	* It works fine for simple combinations of controller/view/model
 	*/
-	public function getDefModel() {
+	public function getDefModel() 
+	{
 		return $this->defmodel;
+	}
+
+	public function getDefPool() 
+	{
+		return $this->def_pool;
 	}
 	/**
 	* DO somethign when action complete 

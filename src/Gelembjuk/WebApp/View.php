@@ -5,6 +5,7 @@ namespace Gelembjuk\WebApp;
 abstract class View {
 	use \Gelembjuk\Logger\ApplicationLogger;
 	use \Gelembjuk\Locale\GetTextTrait;
+	use FabricTrait;
 	
 	protected $responseformat;
 	protected $router;
@@ -20,21 +21,21 @@ abstract class View {
 	protected $htmltemplate_extension;
 	protected $htmltemplate;
 	protected $headerssent;
-	protected $defmodel;
 	
 	protected $signinreqired;
 	protected $readmessagefrominput = false;
 	
 	protected $options;
-	protected $application;
 	
 	protected $defaultouttemplatename = 'default';
 	protected $deepCacheKey = '';
 	protected $deepCacheKeyExpiration = 3600;
 	protected $deepCacheData = null;
 	
-	public function __construct($application,$router,$controller = null,$options = array()) {
-		$this->application = $application;
+	public function __construct($application,$router,$controller = null,$options = array()) 
+	{
+		$this->setApplication($application);
+
 		$this->router = $router;
 		$this->controller = $controller;
 		
@@ -51,8 +52,13 @@ abstract class View {
 	*/
 	public function init() {
 	}
-	public function setController($controller) {
+	public function setController($controller) 
+	{
 		$this->controller = $controller;
+	}
+	public function getDefPool()
+	{
+		return $this->controller->getDefPool();
 	}
 	public function getName() {
 		$function = new \ReflectionClass(static::class);

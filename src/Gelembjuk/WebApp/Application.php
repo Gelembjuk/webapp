@@ -15,6 +15,8 @@ class Application {
 	protected $views;
 	protected $controllers;
 	protected $routers;
+
+	protected $class_alias = [];
 	
 	/*
 	* Mocks for objects
@@ -54,6 +56,7 @@ class Application {
 	protected $controllerspace;
 	protected $viewspace;
 	protected $modelspace;
+	protected $classesspace;
 	protected $dbclassspace;
 	protected $routerspace;
 
@@ -155,6 +158,9 @@ class Application {
 			if (!isset($this->options['modelsnamespace'])) {
 				$this->options['modelsnamespace'] = $this->options['applicationnamespaceprefix'] . 'Models\\';
 			}
+			if (!isset($this->options['classesnamespace'])) {
+				$this->options['classesnamespace'] = $this->options['applicationnamespaceprefix'] . 'Classes\\';
+			}
 			if (!isset($this->options['controllersnamespace'])) {
 				$this->options['controllersnamespace'] = $this->options['applicationnamespaceprefix'] . 'Controllers\\';
 			}
@@ -173,6 +179,9 @@ class Application {
             if (!isset($this->options['modelsnamespace'])) {
                 $this->options['modelsnamespace'] = $this->options['applicationnamespace'];
             }
+			if (!isset($this->options['classesnamespace'])) {
+                $this->options['classesnamespace'] = $this->options['applicationnamespace'];
+            }
             if (!isset($this->options['controllersnamespace'])) {
                 $this->options['controllersnamespace'] = $this->options['applicationnamespace'];
             }
@@ -190,6 +199,7 @@ class Application {
         $this->controllerspace = $this->options['controllersnamespace'];
         $this->viewspace = $this->options['viewsnamespace'];
         $this->modelspace = $this->options['modelsnamespace'];
+		$this->classesspace = $this->options['classesnamespace'];
         $this->dbclassspace = $this->options['databasenamespace'];
         $this->routerspace = $this->options['routersnamespace'];
 		
@@ -201,6 +211,10 @@ class Application {
 		if (isset($this->options['defaultcontrollername'])) {
             $this->defaultcontrollername = $this->options['defaultcontrollername'];
         }
+	}
+	protected function registerClassAlias($alias,$class) 
+	{
+		$this->class_alias[$alias] = $class;
 	}
 	public function getRequestUnieueID() 
 	{
@@ -533,7 +547,8 @@ class Application {
         }
         return $this->viewspace . ucfirst($viewclass);
     }
-	public function getView($name,$router,$controller = null) {		
+	public function getView($name,$router,$controller = null) 
+	{		
 		$classpath = $this->getViewFullClass($name);
 
 		if (!class_exists($classpath)) {
@@ -558,13 +573,15 @@ class Application {
 		
 		return $object;
 	}
-	public function getConfig($name) {
+	public function getConfig($name) 
+	{
 		if (property_exists($this->config, $name)) {
 			return $this->config->$name;
 		}
 		return null;
 	}
-	public function getConfigExtra($name) {
+	public function getConfigExtra($name) 
+	{
 		if ($this->configextra == null) {
 			// load config before using
 			
@@ -604,7 +621,8 @@ class Application {
 		return $hostinfo->getBaseHost();
 	}
 	// build urls
-	public function makeUrl($controllername,$opts = array()) {
+	public function makeUrl($controllername,$opts = array()) 
+	{
         try {
             if ($controllername == '') {
                 // try to get currect action controller
@@ -639,7 +657,8 @@ class Application {
 		}
 	}
 	// absolute url
-	public function makeAbsUrl($controllername,$opts = array()) {
+	public function makeAbsUrl($controllername,$opts = array()) 
+	{
         
         $relativeurl = $this->makeUrl($controllername,$opts);
         
@@ -651,18 +670,22 @@ class Application {
         
         return $baseurl . $relativeurl;
     }
-	public function makeUrlByRouter($router,$opts = array()) {
+	public function makeUrlByRouter($router,$opts = array()) 
+	{
 		return $router->makeUrl($opts);
 	}
-	protected function getRouterNameFromRequest() {
+	protected function getRouterNameFromRequest() 
+	{
 		return $this->getDefaultRouter();
 	}
 	
 	// Profiling
-	public function profilerAction($type,$time,$string) {
+	public function profilerAction($type,$time,$string) 
+	{
 		return true;
 	}
-	protected function getDefaultRouter(){
+	protected function getDefaultRouter()
+	{
         if ($this->defaultroutername == '') {
             // no any router provided
             // use defauls router
@@ -740,11 +763,60 @@ class Application {
 	/*
 	* Create new object and set application to it.
 	* The class must use the trait Context
+	* It is old method. Deprecated
 	*/
 	public function newBlessed($class)
 	{
-        $object = new $class();
-        $object->setApplication($this);
+		$object = new $class();
+
+		if (method_exists($object, 'setApplication')) { 
+        	$object->setApplication($this);
+		}
+		
         return $object;
+	}
+
+	public function new($class) 
+	{
+		if (isset($this->class_alias[$class])) {
+			$class = $this->class_alias[$class];
+		}
+		if (!class_exists($class)) {
+			$custom_class = $this->classesspace . str_replace('/','\\',$class);
+
+			if (class_exists($custom_class)) {
+				$class = $custom_class;
+			} else {
+				throw new \Exception('Class ' . $class . ' not found');
+			}
+		}
+		// this method should be used only for objects with standard constructor.
+		// TODO . Verify the class has that constructor (uses trait or so)
+		$object = new $class($this);
+		
+		if (method_exists($object, 'init')) { 
+			// some classes can have extra constructor
+        	$object->init();
+		}
+		return $object;
+	}
+	/**
+	 * It is alias. It is used in the code to create objects
+	 */
+	public function get($class) {
+		return $this->single($class);
+	}
+	public function single($class) 
+	{
+		static $instances; 
+
+		if (!is_array($instances)) {
+			$instances = [];
+		}
+
+		if (!isset($instances[$class])) {
+			$instances[$class] = $this->new($class);
+		}
+		return $instances[$class];
 	}
 } 

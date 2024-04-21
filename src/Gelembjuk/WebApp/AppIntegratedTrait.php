@@ -20,36 +20,11 @@ trait AppIntegratedTrait {
     use \Gelembjuk\Logger\ApplicationLogger;
     // inherit from text translate trait
     use \Gelembjuk\Locale\GetTextTrait;
-    
-    /**
-    * This is application object , instance of Gelembjuk\WebApp\Applicaion
-    *
-    * @var Gelembjuk\WebApp\Applicaion
-    */
-    protected $application;
 
-    /**
-     * Standard constructor. Will work fine in most of cases
-     */
+    use FabricTrait;
 
-    public function __construct($application = null) 
+    public function __construct($application) 
     {
-        if ($application) {
-            $this->setApplication($application);
-        }
+        $this->setApplication($application);
     }
-    
-    /**
-     * Set application object function. It is required to call it before using any methods inherited from this trait
-     *
-     * @param object $application Gelembjuk\WebApp\Applicaion
-     */
-    
-    public function setApplication($application) 
-    {
-        $this->application = $application;
-        
-        return $this;
-    }
-    
 }

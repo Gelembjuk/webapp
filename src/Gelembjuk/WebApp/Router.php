@@ -15,6 +15,7 @@ class Router {
 	protected $httpmethod = 'GET';
 	protected $options;
 	protected $application;
+	protected $controllername = '';
 	protected static $phpsessioninited;
 
 	public function __construct($application,$options = array()) {
@@ -110,7 +111,7 @@ class Router {
 	public function parseCommandLine() {
 		global $argv, $argc;
 
-		$query = $argv[1];
+		$query = $argv[1] ?? '';
 		
 		foreach (explode('&',$query) as $pair){
 			list($key,$val) = explode('=',$pair);
