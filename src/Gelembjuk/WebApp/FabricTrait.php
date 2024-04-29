@@ -23,6 +23,12 @@ trait FabricTrait {
 
     // this are aliaces registered in specific class
     private $class_alias = [];
+
+    /**
+     * This is local builder object. It is used to build objects of classes that are not part of the application
+     * If this is set then all build calls will be forwarded to it instead of application object
+     */
+    private $local_builder = null;
     
     /**
     * This is application object , instance of Gelembjuk\WebApp\Applicaion
@@ -44,6 +50,11 @@ trait FabricTrait {
         return $this;
     }
 
+    public function setLocalBuilder($builder)
+    {
+        $this->local_builder = $builder;
+    }
+
     protected function registerClassAlias($name,$class)
     {
         $this->class_alias[$name] = $class;
@@ -51,28 +62,54 @@ trait FabricTrait {
     
     protected function new($class)
     {
-        return $this->application->new($this->getFinalClassName($class));
+        return $this->build($class, 'new');
     }
 
     protected function single($class)
     {
-        return $this->application->single($this->getFinalClassName($class));
+        return $this->build($class, 'single');
     }
     /**
      * This is used to call some sub class of given class. I this case given class woks like a feature pool
      */
     public function get($class)
     {
-        return $this->application->single($this->getFinalClassName($class));
+        return $this->build($class, 'get');
     }
-
-    private function getFinalClassName($class)
+    public function build($class, $method)
     {
+        if ($this->local_builder) {
+            return $this->local_builder->$method($class);
+        }
+        list ($class, $modified) = $this->getFinalClassName($class, true);
+
+        $obj = $this->application->$method($class);
+
+        if ($modified) {
+            // if class name was modified then we need to set local builder to the object
+            // it means next builds inside this new object should be made with the same local builder
+            $obj->setLocalBuilder($this);
+        }
+
+        return $obj;
+    }
+    private function getFinalClassName($class, $extended = false)
+    {
+        $modified = false;
+
         if (!empty($this->class_alias[$class])) {
             $class = $this->class_alias[$class];
-
+            $modified = true;
         } else {
-            $class = $this->buildClassName($class);
+            $n_class = $this->buildClassName($class);
+
+            if ($n_class != $class) {
+                $class = $n_class;
+                $modified = true;
+            }
+        }
+        if ($extended) {
+            return [$class,$modified];
         }
         return $class;
     }

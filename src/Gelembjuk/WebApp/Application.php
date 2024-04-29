@@ -17,7 +17,7 @@ class Application {
 	protected $routers;
 
 	protected $class_alias = [];
-	
+	protected $class_builders = [];
 	/*
 	* Mocks for objects
 	*/
@@ -216,6 +216,21 @@ class Application {
 	{
 		$this->class_alias[$alias] = $class;
 	}
+	public function registerClassBuilder($name,$callback) 
+	{
+		if (is_object($callback) && $callback instanceof ClassBuilder) {
+			$this->class_builders[strtolower($name)] = $callback;
+			return;
+		}
+		$this->class_builders[$name] = new ClassBuilder($this, $callback);
+	}
+	// it can be used to set some options for the application
+	// it should be redeclared in the application class ance
+	public function inDebugMode():bool 
+	{
+		return false;
+	}
+
 	public function getRequestUnieueID() 
 	{
 		return $this->requestUniqueID;
@@ -474,6 +489,7 @@ class Application {
             // this is absolute class name
             return $dboclass;
         }
+		$dboclass = str_replace('/','\\',$dboclass);
         return $this->dbclassspace . ucfirst($dboclass);
     }
 	public function getDBONew($name,$profile = 'default') {		
@@ -778,8 +794,14 @@ class Application {
 
 	public function new($class) 
 	{
-		if (isset($this->class_alias[$class])) {
-			$class = $this->class_alias[$class];
+		$lower_name = strtolower($class);
+
+		if (isset($this->class_builders[$lower_name])) {
+			// this is rady object. Justb return it
+			return $this->class_builders[$lower_name];
+		}
+		if (isset($this->class_alias[$lower_name])) {
+			$class = $this->class_alias[$lower_name];
 		}
 		if (!class_exists($class)) {
 			$custom_class = $this->classesspace . str_replace('/','\\',$class);

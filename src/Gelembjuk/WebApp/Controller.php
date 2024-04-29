@@ -47,9 +47,11 @@ abstract class Controller {
 		
 		$this->signinreqired = false;
 	}
-	public function init() {
+	public function init() 
+	{
 	}
-	public function action() {
+	public function action() 
+	{
 		$this->application->setActionController($this);
 		
 		$this->initAuthSession();
@@ -138,8 +140,8 @@ abstract class Controller {
 						if ($exception instanceof DoException) {
 							$code = $exception->getTextCode();
 						}
-					
-						$this->addViewerData('errortrace',$exception->getTraceAsString());
+
+						$this->addViewerData('errortrace',$exception->getFile().' '.$exception->getLine().'; '.$exception->getTraceAsString());
 						
 						$this->router->setErrorPage($exception->getMessage(),$code,$exception->getCode(), $this->responseformat);
 						list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
@@ -258,7 +260,7 @@ abstract class Controller {
 						$this->router->setInput('errorcode',$exception->getTextCode());
 					}
 					
-					$this->addViewerData('errortrace',$exception->getTraceAsString());
+					$this->addViewerData('errortrace',$exception->getFile().' '.$exception->getLine().'; '.$exception->getTraceAsString());
 				}
 			}			// do view again. it can be only in case of error and response format is not html
 			if ($actiontype == 'view') {
