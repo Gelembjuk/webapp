@@ -27,4 +27,35 @@ trait AppIntegratedTrait {
     {
         $this->setApplication($application);
     }
+    /**
+     * This is basic function to call from any place to ensure a user is logged in to access a page
+     * 
+     * @param string $errormessage Error message to show if user is not logged in
+     * @param string $url URL to redirect user to login page. In case if error action is redirect and not just view 
+     */
+    protected function signinRequired($errormessage = '', $url = '') 
+	{
+        if ($this->application->getUserID() > 0) {
+            return true;
+        }
+		
+        if (empty($errormessage)) {
+            // this is needed for correct localisation
+            $errormessage = $this->_('user_auth_required_please_login','exceptions');
+
+            if ($errormessage == 'user_auth_required_please_login') {
+                $errormessage = 'User Auth required. Please login';
+            }
+        }
+
+        if (empty($url)) {
+            $def_url = $this->application->getDefaultAuthExceptionRedirectUrl();
+
+            if (!empty($def_url)) {
+                $url = $def_url;
+            }
+        }
+
+        throw new Exceptions\AuthRequiredException($errormessage, $url);
+	}
 }

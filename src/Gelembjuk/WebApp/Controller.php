@@ -4,12 +4,9 @@ namespace Gelembjuk\WebApp;
 
 use \Gelembjuk\WebApp\Exceptions\ViewException as ViewException;
 use \Gelembjuk\WebApp\Exceptions\DoException as DoException;
-use \Gelembjuk\WebApp\Exceptions\NotAuthorizedException as NotAuthorizedException;
 
 abstract class Controller {
-	use \Gelembjuk\Logger\ApplicationLogger;
-	use \Gelembjuk\Locale\GetTextTrait;
-	use FabricTrait;
+	use AppIntegratedTrait;
 	
 	protected $router;
 	protected $responseformat;
@@ -28,7 +25,8 @@ abstract class Controller {
 	protected $signinreqired;
 	protected $defaultreaction = null;
 	
-	public function __construct($application,$router = null) {
+	public function __construct($application,$router = null) 
+	{
 		$this->setApplication($application);
 		$this->router = $router;
 		
@@ -98,8 +96,10 @@ abstract class Controller {
 					
 					$htmlaction = $this->actionerrordisplay;
 					
-					if ($exception instanceof DoException) {
-						$htmlaction = $exception->getActionOnErrorInHTML($htmlaction);
+					if ($exception instanceof ViewException) {// DoException is a child class for ViewException
+						// get action from exception
+						$htmlaction = $this->getActionOnErrorInHTML($exception, $htmlaction);
+
 					} elseif ($this->defaultreaction) {
                         $url = $this->defaultreaction['error']['url'];
                         
@@ -121,19 +121,13 @@ abstract class Controller {
                         );
 					}
 					
+					// error can be displayed with redirect or html page
 					if ($this->isHTMLResp() && $htmlaction == 'redirect') {
-						// error can be displayed with redirect or html page
-						$actiontype = 'redirect';
 						
-						if ($exception instanceof DoException) {
-							$actionmethod = $exception->getUrl();
-						} else {
-							$actionmethod = $this->getErrorURI($exception->getMessage());
-							
-							if ($actionmethod == '') {
-								$actionmethod = $this->getDefaultURI($exception->getMessage());
-							}
-						}
+						$actiontype = 'redirect';
+
+						$actionmethod = $this->getRedirectUrlOnError($exception, $actionmethod);
+
 					} else {
 						$code = 'error';
 						
@@ -199,6 +193,7 @@ abstract class Controller {
 				if ($this->signinreqired) {
 					$this->signinRequired();
 				}
+				
 				// inside this method must be done everything, headers, all output
 				$result = $viewer->doView($actionmethod,$this->responseformat);
 				
@@ -228,27 +223,15 @@ abstract class Controller {
 				// it throws exception
 				$htmlaction = ($actionmethod != 'error') ? $this->actionerrordisplay:'view';
 				
-				if ($exception instanceof ViewException) {
-					$htmlaction = $exception->getActionOnErrorInHTML($htmlaction);
-				}
+				// this will check the exception class and extract action from it if possible
+				$htmlaction = $this->getActionOnErrorInHTML($exception, $htmlaction);
 				
 				if ($this->isHTMLResp() && $htmlaction == 'redirect') {
-					// the exception can contain url
-					$actiontype = 'redirect';
 					
-					if ($exception instanceof ViewException) {
-						$actionmethod = $exception->getUrl();
-						
-						if($actionmethod == 'defaultview') {
-							$actionmethod = $this->getDefaultURI($exception->getMessage());
-						}
-					} else {
-						$actionmethod = $this->getErrorURI($exception->getMessage());
-							
-						if ($actionmethod == '') {
-							$actionmethod = $this->getDefaultURI($exception->getMessage());
-						}
-					}
+					$actiontype = 'redirect';
+					// the exception can contain url
+					$actionmethod = $this->getRedirectUrlOnError($exception, $actionmethod);
+
 				} else {
 					
 					$actiontype = 'view';
@@ -256,7 +239,7 @@ abstract class Controller {
 					$this->router->setInput('errormessage',$exception->getMessage());
 					$this->router->setInput('errornumber',$exception->getCode());
 					
-					if ($exception instanceof ViewException || $exception instanceof NotAuthorizedException) {
+					if ($exception instanceof ViewException) {
 						$this->router->setInput('errorcode',$exception->getTextCode());
 					}
 					
@@ -283,7 +266,8 @@ abstract class Controller {
 		
 		throw new \Exception('Unknown action in a controller '.$this->getName());
 	}
-	public function actionOffline() {
+	public function actionOffline() 
+	{
 		$this->application->setActionController($this);
 		
 		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
@@ -305,10 +289,50 @@ abstract class Controller {
 			
 		return true;
 	}
-	protected function isHTMLResp() {
+	protected function isHTMLResp() 
+	{
 		return ($this->responseformat == '' || $this->responseformat == 'html');
 	}
-	protected function redirect($url,$script = false) {
+	/**
+	 * In case of exception for Do or View this function will be called to get an action (redirect or just view)
+	 * View means an error will be displayed as a html page in same call.
+	 * Redirect means there will be additional redirect to some other page
+	 * The action can be defined inside the exception object
+	 * Or this method can be reloaded in a child class (def controller for example) to prepare own logic 
+	 */
+	protected function getActionOnErrorInHTML($exception, $cuurrentHTMLAction)
+	{
+		if ($exception instanceof ViewException) {
+			return $exception->getActionOnErrorInHTML($cuurrentHTMLAction);
+		}
+		
+		return $cuurrentHTMLAction;
+	}
+	protected function getRedirectUrlOnError($exception, $originalActionMethod) 
+	{
+		$actionmethod = '';
+
+		if ($exception instanceof ViewException) {
+			$actionmethod = $exception->getUrl();
+			
+			if($actionmethod == 'defaultview') {
+				$actionmethod = $this->getDefaultURI($exception->getMessage());
+			}
+		}
+		if (empty($actionmethod)) {
+			$actionmethod = $this->getErrorURI($exception->getMessage());
+		}
+		if (empty($actionmethod)) {
+			$actionmethod = $this->getDefaultURI($exception->getMessage());
+		}
+		if (empty($actionmethod)) {
+			$actionmethod = $originalActionMethod;
+		}
+		
+		return $actionmethod;
+	}
+	protected function redirect($url,$script = false) 
+	{
         // extract message from an url and set it to the session 
         
         $match = '/(message=([^&]*))/';
@@ -432,19 +456,7 @@ abstract class Controller {
 	{
 		return $this->router->getInput($name,$type,$default,$maxlength);
 	}
-	/**
-	* Call when an action requires a user is signed in
-	*/
-	protected function signinRequired($errormessage = '') 
-	{
-		if ($this->application->getUserID() == 0) {
-			if ($errormessage == '') {
-				$errormessage = $this->_('Login Required');
-			}
-			
-			throw new \Exception($errormessage,401);
-		}
-	}
+	
 	/**
 	* Function helps to build complete urls. It can be used
 	* to add some more arguments to url. For example, some titles/texts for SEO optimization
@@ -463,9 +475,9 @@ abstract class Controller {
         return $this->application->getRouter();
     }
 	/**
-	* Returns a default orl of this controller. This url is used when no other 
+	* Returns a default url of this controller. This url is used when no other 
 	* redirect url is specified in an end of action.
-	* Reimplement the function in a child class if some other specific lnk should be generated.
+	* Reimplement the function in a child class if some other specific link should be generated.
 	*/
 	protected function getDefaultURI($message = null) 
 	{

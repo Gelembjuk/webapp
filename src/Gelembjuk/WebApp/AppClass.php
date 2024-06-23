@@ -16,20 +16,6 @@ abstract class AppClass  {
 		// to do some actions after application is known and set
 	}
 
-	protected function signinRequired() 
-	{
-		if ($this->getUserID() == 0) {
-			// this is needed for correct localisation
-			$message = $this->_('user_auth_required_please_login','exceptions');
-
-			if ($message == 'user_auth_required_please_login') {
-				$message = 'User Auth required. Please login';
-			}
-
-			throw new Exceptions\AuthRequiredException($message);
-		}
-		return true;
-	}
 	protected function getUserID() 
 	{
 		return $this->application->getUserID();

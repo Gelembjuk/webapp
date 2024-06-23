@@ -3,9 +3,7 @@
 namespace Gelembjuk\WebApp;
 
 abstract class View {
-	use \Gelembjuk\Logger\ApplicationLogger;
-	use \Gelembjuk\Locale\GetTextTrait;
-	use FabricTrait;
+	use AppIntegratedTrait;
 	
 	protected $responseformat;
 	protected $router;
@@ -32,7 +30,7 @@ abstract class View {
 	protected $deepCacheKeyExpiration = 3600;
 	protected $deepCacheData = null;
 	
-	public function __construct($application,$router,$controller = null,$options = array()) 
+	public function __construct($application,$router,$controller = null,$options = []) 
 	{
 		$this->setApplication($application);
 
@@ -41,7 +39,7 @@ abstract class View {
 		
 		$this->signinreqired = false;
 		
-		$this->viewdata = array();
+		$this->viewdata = [];
 		$this->headerssent = false;
 		
 		$this->options = $options;
@@ -50,7 +48,8 @@ abstract class View {
 	* Is called right after constructor
 	* to do some actions on initialisation
 	*/
-	public function init() {
+	public function init() 
+	{
 	}
 	public function setController($controller) 
 	{
@@ -116,7 +115,7 @@ abstract class View {
 		$this->beforeDisplayPrepareMessage();
 		
 		// dislay data
-		
+
 		$displaymethodname = 'display'.strtoupper($this->responseformat);
 		
 		if( !method_exists($this,$displaymethodname) ) {
@@ -338,33 +337,28 @@ abstract class View {
 		return $this->displayHTML();
 	}
 	
-	protected function displayJSON() {
+	protected function displayJSON() 
+	{
 		return $this->displayWithObject('\\Gelembjuk\\WebApp\\View\\JSON','jsondisplayclass');
 	}
-	protected function displayJSONDATA() {
+	protected function displayJSONDATA() 
+	{
 		return $this->displayWithObject('\\Gelembjuk\\WebApp\\View\\JSONDATA','jsondatadisplayclass');
 	}
-	protected function displayXML() {
-		
+	protected function displayXML() 
+	{
 		return $this->displayWithObject('\\Gelembjuk\\WebApp\\View\\XML','xmldisplayclass');
 	}
-	protected function displayHTTP() {
-		
+	protected function displayHTTP() 
+	{	
 		return $this->displayWithObject('\\Gelembjuk\WebApp\\\View\\HTTP','HTTPdisplayclass');
 	}
-	protected function getInput($name,$type='string',$default='',$maxlength=0) {
+	protected function getInput($name,$type='string',$default='',$maxlength=0) 
+	{
 		return $this->router->getInput($name,$type,$default,$maxlength);
 	}
-	protected function signinRequired($errormessage = '') {
-		if ($this->application->getUserID() == 0) {
-			if ($errormessage == '') {
-				$errormessage = $this->_('Login Required');
-			}
-			
-			throw new \Exception($errormessage);
-		}
-	}
-	protected function getViewFolderName() {
+	protected function getViewFolderName() 
+	{
 		return $this->getName();
 	}
 	protected function getHTMLTemplatesSubFolder()

@@ -665,6 +665,9 @@ class Application {
             
             return $controller->makeUrl($opts);
 		} catch (\Exception $e) {
+			$this->logQ('Exception on url making '.$e->getMessage(),'error|debug|links');
+			$this->logQ($e->getTraceAsString(),'debug');
+
             if ($this->exceptiononurlmake) {
                 throw $e;
             }
@@ -689,6 +692,13 @@ class Application {
 	public function makeUrlByRouter($router,$opts = array()) 
 	{
 		return $router->makeUrl($opts);
+	}
+	/**
+	 * It can be reloaded in a child class to define a single url where to send a user in case if login is required
+	 */
+	public function getDefaultAuthExceptionRedirectUrl()
+	{
+		return null;
 	}
 	protected function getRouterNameFromRequest() 
 	{
