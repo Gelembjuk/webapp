@@ -11,7 +11,6 @@ class Application {
 	protected $errorhandler = null;
 	protected $dbobjects;
 	protected $dbengines;
-	protected $models;
 	protected $views;
 	protected $controllers;
 	protected $routers;
@@ -23,7 +22,6 @@ class Application {
 	*/
 	protected $dbobjectsready = [];
     protected $dbenginesready = [];
-    protected $modelsready = [];
     protected $controllersready = [];
     protected $routersready = [];
     protected $viewsready = [];
@@ -49,13 +47,12 @@ class Application {
 	protected $requestUniqueID;
 	
 	/**
-	* Class paces for MVC model components
+	* Class spaces for MVC model components
 	* This can be modified by application in case if multiple spaces are needed
 	* For example, for admin side, MVC can be isolated 
 	*/
 	protected $controllerspace;
 	protected $viewspace;
-	protected $modelspace;
 	protected $classesspace;
 	protected $dbclassspace;
 	protected $routerspace;
@@ -66,7 +63,6 @@ class Application {
 		$this->userid = 0;
 		$this->dbobjects = array();
 		$this->dbengines = array();
-		$this->models = array();
 		$this->views = array();
 		$this->controllers = array();
 		$this->localeautoload = false;
@@ -155,9 +151,6 @@ class Application {
 		if (isset($this->options['applicationnamespaceprefix'])) {
             // Use standard model where coponents are sub namespaces with standard names
             // this works for most cases, including multiple spaces
-			if (!isset($this->options['modelsnamespace'])) {
-				$this->options['modelsnamespace'] = $this->options['applicationnamespaceprefix'] . 'Models\\';
-			}
 			if (!isset($this->options['classesnamespace'])) {
 				$this->options['classesnamespace'] = $this->options['applicationnamespaceprefix'] . 'Classes\\';
 			}
@@ -176,9 +169,6 @@ class Application {
 		} elseif (isset($this->options['applicationnamespace'])) {
             // Use simplest approach when components have no sub namespaces and, in fact are in one folder
             // this works for small applications
-            if (!isset($this->options['modelsnamespace'])) {
-                $this->options['modelsnamespace'] = $this->options['applicationnamespace'];
-            }
 			if (!isset($this->options['classesnamespace'])) {
                 $this->options['classesnamespace'] = $this->options['applicationnamespace'];
             }
@@ -198,7 +188,6 @@ class Application {
 		
         $this->controllerspace = $this->options['controllersnamespace'];
         $this->viewspace = $this->options['viewsnamespace'];
-        $this->modelspace = $this->options['modelsnamespace'];
 		$this->classesspace = $this->options['classesnamespace'];
         $this->dbclassspace = $this->options['databasenamespace'];
         $this->routerspace = $this->options['routersnamespace'];
@@ -518,43 +507,6 @@ class Application {
 		return $object;
 	}
 	
-	protected function getModelFullClass($modelclass)
-    {
-        if (substr($modelclass,0,1) == '\\') {
-            // this is absolute class name
-            return $modelclass;
-        }
-        return $this->modelspace . ucfirst($modelclass);
-    }
-	
-	public function getModel($name,$options = array(),$alwayscreatenew = false) {
-		$modelkey = md5(json_encode($options));	
-		
-		if (!$alwayscreatenew && isset($this->models[$name.$modelkey])) {
-			return $this->models[$name.$modelkey];
-		}
-
-		$classpath = $this->getModelFullClass($name);
-
-		if (!class_exists($classpath)) {
-			throw new \Exception(sprintf('Model class %s not found',$classpath));
-		}
-		
-		if (!is_subclass_of($classpath, '\\Gelembjuk\\WebApp\\Model')) {
-			throw new \Exception('Model must be subclass of \\Gelembjuk\\WebApp\\Model');
-		}
-		
-		// this is for mocking on testing
-        if (array_key_exists($classpath,$this->modelsready)) {
-            return $this->modelsready[$classpath];
-        }
-		
-		$object = new $classpath($this,$options);
-		
-		$this->models[$name.$modelkey] = $object;
-		
-		return $object;
-	}
 	protected function getViewFullClass($viewclass)
     {
         if (substr($viewclass,0,1) == '\\') {
@@ -576,7 +528,7 @@ class Application {
 		}
 		
 		if (!is_subclass_of($classpath, '\\Gelembjuk\\WebApp\\View')) {
-			throw new \Exception('Model must be subclass of \\Gelembjuk\\WebApp\\View');
+			throw new \Exception('View must be subclass of \\Gelembjuk\\WebApp\\View');
 		}
 		
 		// this is for mocking on testing
@@ -588,6 +540,30 @@ class Application {
 		$object->init();
 		
 		return $object;
+	}
+	public function getWidget($widgetName)
+	{
+		// widgets are in the same folder as views as a subfolder
+		$classpath = $this->getViewFullClass('Widgets');
+
+		if (!class_exists($classpath.'\\'.$widgetName)) {
+			$widgetName = ucfirst($widgetName);
+		}
+		$classpath .= '\\'.$widgetName;
+
+		if (!class_exists($classpath)) {
+			throw new \Exception(sprintf('View class %s not found',$classpath));
+		}
+
+		if (!is_subclass_of($classpath, '\\Gelembjuk\\WebApp\\Widget')) {
+			throw new \Exception('Widget must be subclass of \\Gelembjuk\\WebApp\\Widget');
+		}
+
+		$object = new $classpath($this);
+		$object->init();
+		
+		return $object;
+
 	}
 	public function getConfig($name) 
 	{
@@ -729,9 +705,6 @@ class Application {
         if ($type == 'controller') {
             $this->controllersready[$classname] = $object;
             
-        } elseif ($type == 'model') {
-            $this->modelsready[$classname] = $object;
-            
         } elseif ($type == 'dbobject') {
             $this->dbobjectsready[$classname] = $object;
             
@@ -752,9 +725,6 @@ class Application {
         if ($type == 'controller') {
             unset($this->controllersready[$classname]);
             
-        } elseif ($type == 'model') {
-            unset($this->modelsready[$classname]);
-            
         } elseif ($type == 'dbobject') {
             unset($this->dbobjectsready[$classname]);
             
@@ -773,7 +743,6 @@ class Application {
 	public function removeAllStandardClassObjectReady()
 	{
         $this->controllersready = [];
-        $this->modelsready = [];
         $this->dbobjectsready = [];
         $this->dbenginesready = [];
         $this->routersready = [];

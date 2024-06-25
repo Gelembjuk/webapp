@@ -58,4 +58,16 @@ trait AppIntegratedTrait {
 
         throw new Exceptions\AuthRequiredException($errormessage, $url);
 	}
+
+    public function init() 
+	{
+		// do nothing here.
+		// it is used to have a constructor in a class that uses this trait
+		// to do some actions after application is known and set
+	}
+
+	protected function getUserID() 
+	{
+		return $this->application->getUserID();
+	}
 }

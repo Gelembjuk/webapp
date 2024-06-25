@@ -259,7 +259,8 @@ abstract class View {
 		
 		return false;
 	}
-	protected function displayWithObject($class,$altoption,$displayoptions = array()) {
+	protected function displayWithObject($class,$altoption,$displayoptions = []) 
+	{
 		
 		if (isset($this->options[$altoption])) {
 			$class = $this->options[$altoption];

@@ -21,7 +21,7 @@ class HTML extends Display {
 		}
 		
 		if (!isset($options['template'])) {
-			throw new \Exception('No HTML temlate provided');
+			throw new \Exception('No HTML template provided');
 		}
 		
 		if (!isset($options['templatingclass'])) {
@@ -60,8 +60,6 @@ class HTML extends Display {
 				$options['templatepath'] .= '/';
 			}
 		}
-		
-		
 		
 		if (isset($options['templatescomplpath']) &&
 			substr($options['templatescomplpath'],-1) != '/') {
