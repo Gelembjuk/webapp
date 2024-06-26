@@ -259,6 +259,29 @@ abstract class View {
 		
 		return false;
 	}
+	public function displayWidget($widgetObj, $responseformat)
+	{
+
+		$toDisplay = $widgetObj->render();
+
+		if ($this->responseformat == 'json') {
+			$class = '\\Gelembjuk\\WebApp\\View\\JSON';
+		} elseif ($this->responseformat == 'jsondata') {
+			$class = '\\Gelembjuk\\WebApp\\View\\JSONDATA';
+		} elseif ($this->responseformat == 'xml') {
+			$class = '\\Gelembjuk\\WebApp\\View\\XML';
+		} elseif ($this->responseformat == 'http') {
+			$class = '\\Gelembjuk\\WebApp\\View\\HTTP';
+		} else {
+			$class = '\\Gelembjuk\\WebApp\\View\\HTML';
+		}
+
+		$displayobject = new $class($this->application);
+		
+		$displayobject->setPreparedData($toDisplay);
+		
+		return $displayobject->display();
+	}
 	protected function displayWithObject($class,$altoption,$displayoptions = []) 
 	{
 		
@@ -284,7 +307,7 @@ abstract class View {
 		$displayobject->init($displayoptions);
 
 		$displayobject->setData($this->viewdata);
-		
+
 		return $displayobject->display();
 	}
 	protected function displayHTML() {

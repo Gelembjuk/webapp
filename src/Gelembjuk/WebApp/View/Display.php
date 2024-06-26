@@ -5,6 +5,7 @@ namespace Gelembjuk\WebApp\View;
 abstract class Display {
 	protected $options;
 	protected $data;
+	protected $preparedDisplayData = '';
 	protected $application;
 	protected $deepCacheKey = '';
 	protected $deepCacheKeyExp = 3600;
@@ -22,8 +23,13 @@ abstract class Display {
 		}
 		return true;
 	}
-	public function setData($data) {
+	public function setData($data) 
+	{
 		return true;
+	}
+	public function setPreparedData($data) 
+	{
+		$this->preparedDisplayData = $data;
 	}
 	protected function cacheData($data)
 	{

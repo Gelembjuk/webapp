@@ -138,7 +138,11 @@ class HTML extends Display {
 		}
 		return true;
 	}
-	protected function getHTML() {
+	protected function getHTML() 
+	{
+		if (!empty($this->preparedDisplayData)) {
+			return $this->preparedDisplayData;
+		}
 		$this->requireSettings();
 		
 		// create templating class

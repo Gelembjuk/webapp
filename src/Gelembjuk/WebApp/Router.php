@@ -30,25 +30,31 @@ class Router {
 	/*
 	* Init router. Can be used in shild classes to do some action right after object created
 	*/
-	public function init() {
+	public function init() 
+	{
 	}
-	public function detectLocale() {
+	public function detectLocale() 
+	{
 		if ($this->options['locale'] != '') {
 			$this->setLocale($this->options['locale']);
+
 		} elseif ($this->getLocale() == '') {
 			// get it from browser
 			$this->setLocale($this->preferedUserLanguage(true));
 		}		
 		return $this->locale;
 	}
-	public function clearInput() {
+	public function clearInput() 
+	{
 		$this->input = array();
 	}
-	public function parseInput() {
+	public function parseInput() 
+	{
 		$this->parseRequest();
 		$this->parseUrl('');
 	}
-	public function parseRequest() {
+	public function parseRequest() 
+	{
 		$this->input = array_merge($this->input,$_REQUEST);
 		
 		foreach ($_COOKIE as $k => $v) {
@@ -58,15 +64,18 @@ class Router {
 		}
 		return true;
 	}
-	public function parseGet() {
+	public function parseGet() 
+	{
 		$this->input = array_merge($this->input,$_GET);
 		return true;
 	}
-	public function parsePost() {
+	public function parsePost() 
+	{
 		$this->input = array_merge($this->input,$_POST);
 		return true;
 	}
-	public function parseFiles() {
+	public function parseFiles() 
+	{
 		if ($this->files !== null) {
 			return true;
 		}
@@ -79,7 +88,8 @@ class Router {
 		return true;
 	}
 	// parse request body to input array and then read top level keys as inputs
-	public function parseBody() {
+	public function parseBody() 
+	{
 		$contenttype = strtolower($_SERVER["CONTENT_TYPE"]);
 		
 		if (empty($contenttype)) {
@@ -100,7 +110,8 @@ class Router {
 			}
 		}
 	}
-	public function getRequestBody() {
+	public function getRequestBody() 
+	{
 		static $requestbody;
 
 		if (empty($requestbody)) {
@@ -108,7 +119,8 @@ class Router {
 		}
 		return $requestbody;
 	}
-	public function parseCommandLine() {
+	public function parseCommandLine() 
+	{
 		global $argv, $argc;
 
 		$query = $argv[1] ?? '';
@@ -135,16 +147,20 @@ class Router {
 			}
 		}
 	}
-	public function setInput($name,$value) {
+	public function setInput($name,$value) 
+	{
 		$this->input[$name] = $value;
 	}
-	public function unSetInput($name) {
+	public function unSetInput($name) 
+	{
 		unset($this->input[$name]);
 	}
-	protected function filterVar($value,$filter) {
+	protected function filterVar($value,$filter) 
+	{
 		
 	}
-	protected function filterXss($value) {
+	protected function filterXss($value) 
+	{
 		static $xssconvertor = null;
 		
 		if ($xssconvertor === null) {
@@ -153,7 +169,8 @@ class Router {
 
 		return $xssconvertor->xss_clean($value);
 	}
-	public function getInput($name,$filter = 'string', $default = '', $maxlength = 0) {
+	public function getInput($name,$filter = 'string', $default = '', $maxlength = 0) 
+	{
 		
 		if ($filter == 'file') {
 			if (isset($this->files[$name]) && $this->files[$name]['name'] != '') {
@@ -236,7 +253,8 @@ class Router {
 		}
 		return $v;
 	}
-	public function getInputs($list) {
+	public function getInputs($list) 
+	{
 		if (!is_array($list)) {
 			$list = explode(',',$list);
 		}
@@ -268,7 +286,8 @@ class Router {
 	/* returns all inputs as one hash
 	 * this function would not filter data. so use it carefully 
 	 */
-	public function getInputAsStructure($includefiles = false) {
+	public function getInputAsStructure($includefiles = false) 
+	{
 		$data = array();
 
 		$data = $this->input;
@@ -296,7 +315,8 @@ class Router {
 		}
 		return '';
 	}
-	protected function getRequestUrlPath(){
+	protected function getRequestUrlPath()
+	{
 		return $_SERVER['REQUEST_URI'];
 	}
 
@@ -306,17 +326,20 @@ class Router {
         return $hostinfo->getRequestHost();
     }
 	
-	public function getActionInfo() {
+	public function getActionInfo() 
+	{
 		return array($this->actiontype,$this->actionmethod,$this->responseformat);
 	}
-	public function makeAbsoluteUrl($opts = array()) {
+	public function makeAbsoluteUrl($opts = array()) 
+	{
 		$relurl = $this->application->makeUrl($opts);
 		
 		$baseurl = $this->appliation->getBasehost();
 		
 		return $baseurl.$relurl;
 	}
-	public function getName() {
+	public function getName() 
+	{
 		$function = new \ReflectionClass(static::class);
 		return $function->getShortName();
 	}
@@ -332,7 +355,8 @@ class Router {
 	public function dumpInput() {
 		print_r($this->input);
 	}
-	protected function preferedUserLanguage($onlylanguage = false) { 
+	protected function preferedUserLanguage($onlylanguage = false) 
+	{ 
 		$http_accept_language = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '';  
 			preg_match_all("/([[:alpha:]]{1,8})(-([[:alpha:]|-]{1,8}))?" . 
 				"(\s*;\s*q\s*=\s*(1\.0{0,3}|0\.\d{0,3}))?\s*(,|$)/i", 
@@ -375,7 +399,8 @@ class Router {
 
 		return $bestlang; 
 	}
-	public function initSession() {
+	public function initSession() 
+	{
 		if (!self::$phpsessioninited) {
 			self::$phpsessioninited = true;
 			
@@ -427,20 +452,26 @@ class Router {
         return true;
 	}
 	/**
-	* It is expected this function will be overwritten in child classes
+	* This method can be redefined in the child class to implement custom way to determine action
 	* Here it implements simple way with some traditional argument names
 	*/
-	protected function setUpActionInfo() {
+	protected function setUpActionInfo() 
+	{
         // we determine required action based on input arguments
-        if ($this->getInput('view') != '') {
+        if (!empty($this->getInput('view'))) {
             // display something
             $this->actiontype = 'view';
             $this->actionmethod = $this->getInput('view','alpha');
             
-        } elseif ($this->getInput('do') != '') {
+        } elseif (!empty($this->getInput('do'))) {
             // do something
             $this->actiontype = 'do';
             $this->actionmethod = $this->getInput('do','alpha');
+            
+        } elseif (!empty($this->getInput('widget'))) {
+            // do something
+            $this->actiontype = 'widget';
+            $this->actionmethod = $this->getInput('widget','alpha');
             
         } else {
             // display default page

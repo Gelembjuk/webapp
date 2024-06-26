@@ -73,6 +73,31 @@ abstract class Controller {
 		if (is_object($errorhandler)) {
 			$errorhandler->setViewFormat( ($this->responseformat != '') ? $this->responseformat:'html' );
 		}
+
+		// widget can return a part of page
+		if ($actiontype == 'widget') {
+			try {
+				$widgetObj = $this->application->getWidget($actionmethod)
+					->withRouter($this->router)
+					->withResponseFormat($this->responseformat);
+
+				$viewer = $this->getViewer();
+				$viewer->setController($this);
+
+				$viewer->displayWidget($widgetObj, $this->responseformat);
+				
+				return ;
+			} catch (\Exception $exception) {
+				$actiontype = 'view';
+				$actionmethod = 'error';
+				$this->router->setInput('errormessage',$exception->getMessage());
+				$this->router->setInput('errornumber',$exception->getCode());
+				
+				if ($exception instanceof ViewException) {
+					$this->router->setInput('errorcode',$exception->getTextCode());
+				}
+			}
+		}
 		
 		if ($actiontype == 'do') {
 			$methodname = 'do'.$actionmethod;

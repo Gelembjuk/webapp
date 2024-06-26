@@ -17,7 +17,13 @@ class JSON extends Display {
 	
 		return true;
 	}
-	public function display() {
+	public function display() 
+	{
+		if (!empty($this->preparedDisplayData)) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo $this->preparedDisplayData;
+			return true;
+		}
         if (is_array($this->options['cachedata'])) {
             if (!empty($this->options['cachedata'][1])) {
                 header($this->options['cachedata'][1]);

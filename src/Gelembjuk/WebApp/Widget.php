@@ -6,21 +6,22 @@ abstract class Widget extends AppClass {
     protected $inputdata = [];
     protected $viewdata = [];
     protected $displayFormat = 'html';
+    protected $router = null;
 
     abstract protected function getTemplateName();
-    abstract protected function parseInput($params);
     abstract protected function prepareData();
 
-	public function render($params)
+	public function render($params = [])
     {
+        $this->inputdata = $params;
+
         try {
-            $this->parseInput($params);
+            $this->prepareData();
+
         } catch (\Exception $e) {
             return $this->outputError($e->getMessage());
         }
         
-        $this->prepareData();
-
         if ($this->displayFormat == 'json') {
             return json_encode($this->viewdata);
         }
@@ -30,9 +31,31 @@ abstract class Widget extends AppClass {
 
         return $this->renderTemplate($htmlTemplate);
     }
+    public function withRouter($router)
+    {
+        $this->router = $router;
+
+        return $this;
+    }
+    public function withResponseFormat($format)
+    {
+        $this->displayFormat = $format;
+
+        return $this;
+    }
+    protected function getInput($key, $type = 'string', $default = null)
+    {
+        if ($this->router) {
+            return $this->router->getInput($key, $type);
+        }
+        return $this->inputdata[$key] ?? $default;
+    }
     protected function outputError($message)
     {
-        return $message;
+        if ($this->displayFormat == 'json') {
+            return json_encode(['error' => $message]);
+        }
+        return '<span class="color:red;font-weight:bold;">'.$message.'</span>';
     }
     private function renderTemplate($template)
     {

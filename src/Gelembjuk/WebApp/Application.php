@@ -227,7 +227,8 @@ class Application {
 	/*
 	* To add some options after init executed
 	*/
-	public function addOption($key,$value) {
+	public function addOption($key,$value) 
+	{
 		if (trim($key) == '') {
 			return false;
 		}

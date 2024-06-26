@@ -3,7 +3,13 @@
 namespace Gelembjuk\WebApp\View;
 
 class XML extends JSON {
-	public function display() {
+	public function display() 
+	{
+		if (!empty($this->preparedDisplayData)) {
+			header('Content-type: application/xml');
+			echo $this->preparedDisplayData;
+			return true;
+		}
 		$this->requireSettings();
 		
 		$displaydata = $this->prepareResponseStructure();
