@@ -5,7 +5,7 @@ namespace Gelembjuk\WebApp;
 abstract class Widget extends AppClass {
     protected $inputdata = [];
     protected $viewdata = [];
-    protected $displayFormat = 'html';
+    protected $responseformat = 'html';
     protected $router = null;
 
     abstract protected function getTemplateName();
@@ -22,7 +22,7 @@ abstract class Widget extends AppClass {
             return $this->outputError($e->getMessage());
         }
         
-        if ($this->displayFormat == 'json') {
+        if ($this->responseformat == 'json') {
             return json_encode($this->viewdata);
         }
 
@@ -39,7 +39,7 @@ abstract class Widget extends AppClass {
     }
     public function withResponseFormat($format)
     {
-        $this->displayFormat = $format;
+        $this->responseformat = $format;
 
         return $this;
     }
@@ -52,7 +52,7 @@ abstract class Widget extends AppClass {
     }
     protected function outputError($message)
     {
-        if ($this->displayFormat == 'json') {
+        if ($this->responseformat == 'json') {
             return json_encode(['error' => $message]);
         }
         return '<span class="color:red;font-weight:bold;">'.$message.'</span>';
@@ -88,4 +88,30 @@ abstract class Widget extends AppClass {
 		
 		return $templating->fetchTemplate();
     }
+    public function display()
+	{
+		$toDisplay = $this->render();
+
+		if ($this->responseformat == 'json') {
+			$class = '\\Gelembjuk\\WebApp\\View\\JSON';
+
+		} elseif ($this->responseformat == 'jsondata') {
+			$class = '\\Gelembjuk\\WebApp\\View\\JSONDATA';
+
+		} elseif ($this->responseformat == 'xml') {
+			$class = '\\Gelembjuk\\WebApp\\View\\XML';
+
+		} elseif ($this->responseformat == 'http') {
+			$class = '\\Gelembjuk\\WebApp\\View\\HTTP';
+
+		} else {
+			$class = '\\Gelembjuk\\WebApp\\View\\HTML';
+		}
+
+		$displayobject = new $class($this->application);
+		
+		$displayobject->setPreparedData($toDisplay);
+		
+		return $displayobject->display();
+	}
 }

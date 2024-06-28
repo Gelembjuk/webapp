@@ -321,8 +321,8 @@ class Application {
             return $this->controllers[$controllerpath];
         }
 
-		$controller = new $controllerpath($this,$router);
-		
+		$controller = new $controllerpath($this);
+		$controller->withRouter($router);
 		$controller->init();
 		
 		$this->controllers[$controllerpath] = $controller;
@@ -516,7 +516,7 @@ class Application {
         }
         return $this->viewspace . ucfirst($viewclass);
     }
-	public function getView($name,$router,$controller = null) 
+	public function getView($name,$controller) 
 	{		
 		$classpath = $this->getViewFullClass($name);
 
@@ -524,8 +524,8 @@ class Application {
 			throw new \Exception(sprintf('View class %s not found',$classpath));
 		}
 		
-		if (!$router) {
-			throw new \Exception(sprintf('View class %s requires a router object',$classpath));
+		if (!$controller) {
+			throw new \Exception(sprintf('View class %s requires a controller object',$classpath));
 		}
 		
 		if (!is_subclass_of($classpath, '\\Gelembjuk\\WebApp\\View')) {
@@ -537,7 +537,8 @@ class Application {
             return $this->viewsready[$classpath];
         }
 		
-		$object = new $classpath($this,$router,$controller,$this->options);
+		$object = new $classpath($this, $controller, $this->options);
+		$object->withRouter($controller->getRouter());
 		$object->init();
 		
 		return $object;

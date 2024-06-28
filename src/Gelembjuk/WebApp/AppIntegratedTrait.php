@@ -23,9 +23,17 @@ trait AppIntegratedTrait {
 
     use FabricTrait;
 
+    protected $signinreqired = false;
+
     public function __construct($application) 
     {
         $this->setApplication($application);
+    }
+    protected function checkIfSignedInRequired()
+    {
+        if ($this->signinreqired) {
+            $this->signinRequired();
+        }
     }
     /**
      * This is basic function to call from any place to ensure a user is logged in to access a page
@@ -58,7 +66,14 @@ trait AppIntegratedTrait {
 
         throw new Exceptions\AuthRequiredException($errormessage, $url);
 	}
-
+    protected function actionRequiresSignin()
+    {
+        $this->signinreqired = true;
+    }
+    protected function actionDoesNotRequiresSignin()
+    {
+        $this->signinreqired = false;
+    }
     public function init() 
 	{
 		// do nothing here.

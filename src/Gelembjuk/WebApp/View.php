@@ -3,10 +3,8 @@
 namespace Gelembjuk\WebApp;
 
 abstract class View {
-	use AppIntegratedTrait;
+	use RouterAccessTrait;// includes also AppIntegratedTrait
 	
-	protected $responseformat;
-	protected $router;
 	protected $controller;
 	protected $erroronnotfoundview = false;
 	protected $viewdata;
@@ -20,7 +18,6 @@ abstract class View {
 	protected $htmltemplate;
 	protected $headerssent;
 	
-	protected $signinreqired;
 	protected $readmessagefrominput = false;
 	
 	protected $options;
@@ -30,14 +27,11 @@ abstract class View {
 	protected $deepCacheKeyExpiration = 3600;
 	protected $deepCacheData = null;
 	
-	public function __construct($application,$router,$controller = null,$options = []) 
+	public function __construct($application, $controller = null,$options = []) 
 	{
 		$this->setApplication($application);
 
-		$this->router = $router;
 		$this->controller = $controller;
-		
-		$this->signinreqired = false;
 		
 		$this->viewdata = [];
 		$this->headerssent = false;
@@ -63,10 +57,9 @@ abstract class View {
 		$function = new \ReflectionClass(static::class);
 		return $function->getShortName();
 	}
-	public function doView($actionmethod,$responseformat) {
-		if ($this->signinreqired) {
-			$this->signinRequired();
-		}
+	public function doView($actionmethod,$responseformat) 
+	{
+		$this->checkIfSignedInRequired();
 		
 		$this->responseformat = $responseformat;
 		
@@ -86,7 +79,7 @@ abstract class View {
 				$viewmethodname = 'viewError';
 				$this->viewstatus = 'not_found';
 				$this->viewstatuscode = 404;
-				$this->router->setInput('errormessage','Not found');
+				$this->getRouter()->setInput('errormessage','Not found');
 			} else {
 				$viewmethodname = 'view';
 			}
@@ -97,7 +90,7 @@ abstract class View {
 		
 		// result is not important there. 
 		// if view throws error then it will be catched above
-		$result = $this->$viewmethodname();
+		$result = $this->callMethodExternally($viewmethodname);
 		
 		if ($result !== true) {
 			return $result;
@@ -145,7 +138,7 @@ abstract class View {
             // check if there is a message in a session. 
             // If yes then read and remove (removing is done inside a router)
             if ($this->viewdata['message'] == '') {
-                $this->viewdata['message'] = $this->router->getMessageFromSession();
+                $this->viewdata['message'] = $this->getRouter()->getMessageFromSession();
             }
             
             if ($this->readmessagefrominput && $this->viewdata['message'] == '') {
@@ -187,20 +180,20 @@ abstract class View {
 	protected function viewError() {
 		$this->htmlouttemplate_force = '';
 		// in child classes this can be redefined to use some better error page
-		$this->viewdata['errormessage'] = $this->router->getInput('errormessage');
+		$this->viewdata['errormessage'] = $this->getInput('errormessage');
 		
 		if ($this->viewdata['errormessage'] == '') {
-			$this->viewdata['errormessage'] = $this->router->getInput('message');
+			$this->viewdata['errormessage'] = $this->getInput('message');
 		}
 		
 		if ($this->viewdata['errormessage'] == '') {
-            $this->viewdata['errormessage'] = $this->router->getMessageFromSession();
+            $this->viewdata['errormessage'] = $this->getRouter()->getMessageFromSession();
         }
 		
-		$this->router->unSetInput('message');
+		$this->getRouter()->unSetInput('message');
 		
-		$this->viewdata['errorcode'] = $this->router->getInput('errorcode','alpha');
-		$this->viewdata['errornumber'] = $this->router->getInput('errornumber','int');
+		$this->viewdata['errorcode'] = $this->getInput('errorcode','alpha');
+		$this->viewdata['errornumber'] = $this->getInput('errornumber','int');
 		$this->viewstatus = 'error';
 		$this->viewstatuscode = 400;
 		
@@ -259,29 +252,7 @@ abstract class View {
 		
 		return false;
 	}
-	public function displayWidget($widgetObj, $responseformat)
-	{
-
-		$toDisplay = $widgetObj->render();
-
-		if ($this->responseformat == 'json') {
-			$class = '\\Gelembjuk\\WebApp\\View\\JSON';
-		} elseif ($this->responseformat == 'jsondata') {
-			$class = '\\Gelembjuk\\WebApp\\View\\JSONDATA';
-		} elseif ($this->responseformat == 'xml') {
-			$class = '\\Gelembjuk\\WebApp\\View\\XML';
-		} elseif ($this->responseformat == 'http') {
-			$class = '\\Gelembjuk\\WebApp\\View\\HTTP';
-		} else {
-			$class = '\\Gelembjuk\\WebApp\\View\\HTML';
-		}
-
-		$displayobject = new $class($this->application);
-		
-		$displayobject->setPreparedData($toDisplay);
-		
-		return $displayobject->display();
-	}
+	
 	protected function displayWithObject($class,$altoption,$displayoptions = []) 
 	{
 		
@@ -329,8 +300,8 @@ abstract class View {
 			'templatesoptions' => $this->options['htmltemplatesoptions'],
 			'template' => $this->htmltemplate,
 			'view' => $this->getViewFolderName(),
-			'controller' => $this->router->getController(),
-			'outtemplate' => $this->router->getInput('outtmpl','alpha',$this->defaultouttemplatename),
+			'controller' => $this->getRouter()->getController(),
+			'outtemplate' => $this->getInput('outtmpl','alpha',$this->defaultouttemplatename),
 			'outtemplate_force' => $this->htmlouttemplate_force,
 			'noouttemplate' => $this->htmlouttemplate_disable,
 			'headerssent' => $this->headerssent,
@@ -376,10 +347,6 @@ abstract class View {
 	protected function displayHTTP() 
 	{	
 		return $this->displayWithObject('\\Gelembjuk\WebApp\\\View\\HTTP','HTTPdisplayclass');
-	}
-	protected function getInput($name,$type='string',$default='',$maxlength=0) 
-	{
-		return $this->router->getInput($name,$type,$default,$maxlength);
 	}
 	protected function getViewFolderName() 
 	{

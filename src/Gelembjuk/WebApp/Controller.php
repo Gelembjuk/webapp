@@ -6,47 +6,26 @@ use \Gelembjuk\WebApp\Exceptions\ViewException as ViewException;
 use \Gelembjuk\WebApp\Exceptions\DoException as DoException;
 
 abstract class Controller {
-	use AppIntegratedTrait;
+	use RouterAccessTrait;// includes also AppIntegratedTrait
 	
-	protected $router;
-	protected $responseformat;
 	protected $actionerrordisplay = 'redirect';
 
-	// for older style 
-	protected $defmodelname;
-	protected $defmodel;
-
-	// for older style 
+	/**
+	 * Optional properties. Some defaul object to do most of work for this controller
+	 */
 	protected $def_pool = null;
 	protected $def_objects_pool_name = null;
 
 	protected $defviewname = '';
-	protected $viewdata;
-	protected $signinreqired;
+	protected $viewdata = [];
+	
 	protected $defaultreaction = null;
 	
-	public function __construct($application,$router = null) 
+	public function init() 
 	{
-		$this->setApplication($application);
-		$this->router = $router;
-		
-		$this->viewdata = array();
-		
-		if (!$this->router) {
-			$this->router = $this->getRouter();
-		}
-		
-		if ($this->defmodelname != '') {
-			$this->defmodel = $this->application->getModel($this->defmodelname);
-		}
 		if ($this->def_objects_pool_name != '') {
 			$this->def_pool = $this->single($this->def_objects_pool_name);
 		}
-		
-		$this->signinreqired = false;
-	}
-	public function init() 
-	{
 	}
 	public function action() 
 	{
@@ -81,10 +60,7 @@ abstract class Controller {
 					->withRouter($this->router)
 					->withResponseFormat($this->responseformat);
 
-				$viewer = $this->getViewer();
-				$viewer->setController($this);
-
-				$viewer->displayWidget($widgetObj, $this->responseformat);
+				$widgetObj->display();
 				
 				return ;
 			} catch (\Exception $exception) {
@@ -104,11 +80,9 @@ abstract class Controller {
 			
 			if( method_exists($this,$methodname) ) {
 				try {
-					if ($this->signinreqired) {
-						$this->signinRequired();
-					}
+					$this->checkIfSignedInRequired();
 					
-					$result = $this->$methodname();
+					$result = $this->callMethodExternally($methodname);
 					
 					if( $result === false ) {
 						throw new \Exception('Unknown error on DO action');
@@ -215,9 +189,7 @@ abstract class Controller {
 			$viewer->setController($this);
 			
 			try {
-				if ($this->signinreqired) {
-					$this->signinRequired();
-				}
+				$this->checkIfSignedInRequired();
 				
 				// inside this method must be done everything, headers, all output
 				$result = $viewer->doView($actionmethod,$this->responseformat);
@@ -399,7 +371,7 @@ abstract class Controller {
         $opts = $this->completeUrlOpts($opts);
         
 		$opts['controller'] = $this->getName();
-		return $this->router->makeUrl($opts);
+		return $this->getRouter()->makeUrl($opts);
 	}
 	/*
 	* Get native model of this controller
@@ -417,35 +389,41 @@ abstract class Controller {
 	/**
 	* DO somethign when action complete 
 	*/
-	protected function beforeEnd() {
+	protected function beforeEnd() 
+	{
 	}
 	/**
 	* Do somethign before any action started
 	*/
-	protected function beforeStart() {
+	protected function beforeStart() 
+	{
 	}
 	/*
 	* Should check if a user is loged in and set user id in the application 
 	* This can be called when each request must be authentificated. No need to cal when straditional web session is used
 	*/
-	protected function initAuthSession() {
+	protected function initAuthSession() 
+	{
 	}
 	
-	protected function filterRedirect($url,$script = false) {
+	protected function filterRedirect($url,$script = false) 
+	{
 		return array($url,$script);
 	}
 	/**
 	* Returns an url of an error view for this controller.
 	* If urls must be built with some specific rules, then this function should be reimplemented in a child class.
 	*/
-	protected function getErrorURI($message) {
+	protected function getErrorURI($message) 
+	{
         
         return $this->makeUrl(array('view'=>'error', 'message' => $message));
 	}
 	/**
-	* Get viewer assiiated with this controller
+	* Get viewer associated with this controller
 	*/
-	protected function getViewer($name = '') {
+	protected function getViewer($name = '') 
+	{
 		if ($name == '') {
 			if ($this->defviewname != '') {
 				$name = $this->defviewname;
@@ -456,12 +434,14 @@ abstract class Controller {
 			}
 		}
 		// if this was not reloaded in child class then it means view name is same as controller
-		return $this->application->getView($name,$this->router,$this);
+		return $this->application->getView($name,$this);
 	}
-	public function getViewerData() {
+	public function getViewerData() 
+	{
 		return $this->viewdata;
 	}
-	public function shiftViewerData() {
+	public function shiftViewerData() 
+	{
 		$data = $this->viewdata;
 		$this->viewdata = array();
 		return $data;
@@ -474,13 +454,6 @@ abstract class Controller {
 	{
 		$this->viewdata[$name] = $value;
 	}
-	/**
-	* Get inmput from a router 
-	*/
-	protected function getInput($name,$type='string',$default='',$maxlength=0) 
-	{
-		return $this->router->getInput($name,$type,$default,$maxlength);
-	}
 	
 	/**
 	* Function helps to build complete urls. It can be used
@@ -490,15 +463,6 @@ abstract class Controller {
 	{
         return $opts;
 	}
-	/**
-	* Returns a router for this controller to read input data from it.
-	* This implementation returns a default router of an app.
-	* If the app has more then 1 router then this function can be implemented in a controller class to work differently.
-	*/
-	protected function getRouter() 
-	{
-        return $this->application->getRouter();
-    }
 	/**
 	* Returns a default url of this controller. This url is used when no other 
 	* redirect url is specified in an end of action.
