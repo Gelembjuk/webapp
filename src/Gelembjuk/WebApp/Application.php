@@ -13,7 +13,7 @@ class Application {
 	protected $dbengines;
 	protected $views;
 	protected $controllers;
-	protected $routers;
+	protected $routers = [];
 
 	protected $class_alias = [];
 	protected $class_builders = [];
@@ -274,14 +274,12 @@ class Application {
 			$controllername = ucfirst($controllername);
 		}
 		
-		$router = null;
+		$router = $this->getRouter();
 		
 		if ($controllername == '') {
 			if ($this->getOption('DefaultController') != '') {
 				$controllername = ucfirst($this->getOption('DefaultController'));
 			} else {
-				$router = $this->getRouter();
-				
 				if ($this->routerfront === null) {
                     $this->routerfront = $router;
                     $this->frontRouterLoaded();
@@ -322,6 +320,7 @@ class Application {
         }
 
 		$controller = new $controllerpath($this);
+		
 		$controller->withRouter($router);
 		$controller->init();
 		
@@ -372,7 +371,6 @@ class Application {
 			$defroutername = $this->getDefaultRouter();
 			$routername = $this->getRouterFullClass($defroutername);
 		}
-		
 		// this is for mocking on testing
         if (array_key_exists($routername,$this->routersready)) {
             return $this->routersready[$routername];
@@ -460,7 +458,8 @@ class Application {
 		return $object;
 	}
 	
-	public function getDBO($name,$profile = 'default') {	
+	public function getDBO($name,$profile = 'default') 
+	{	
         // this is for mocking on testing
         $classpath = $this->getDBOFullClass($name);
         if (array_key_exists($classpath,$this->dbobjectsready)) {

@@ -455,7 +455,7 @@ class Router {
 	* This method can be redefined in the child class to implement custom way to determine action
 	* Here it implements simple way with some traditional argument names
 	*/
-	protected function setUpActionInfo() 
+	public function setUpActionInfo() 
 	{
         // we determine required action based on input arguments
         if (!empty($this->getInput('view'))) {

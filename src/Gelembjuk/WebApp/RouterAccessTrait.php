@@ -68,10 +68,7 @@ trait RouterAccessTrait {
         if (!$param->hasType()) {
             return 'string';
         }
-        if ($param->isArray()) {
-            return 'array';
-        }
-
+        
 		switch ($param->getType()->getName()) {
 			case 'int':
 				return 'int';
