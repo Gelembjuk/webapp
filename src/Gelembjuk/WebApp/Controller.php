@@ -55,8 +55,8 @@ abstract class Controller {
             $actiontype = 'view';
             $actionmethod = 'error';
             
-            $this->router->setInput('errormessage',$e->getMessage());
-            $this->router->setInput('errornumber',$e->getCode());
+            $this->addViewerData('errormessage',$e->getMessage());
+            $this->addViewerData('errornumber',$e->getCode());
 		}
 		
 		// set response format to error handler. so if error happens 
@@ -80,11 +80,11 @@ abstract class Controller {
 			} catch (\Exception $exception) {
 				$actiontype = 'view';
 				$actionmethod = 'error';
-				$this->router->setInput('errormessage',$exception->getMessage());
-				$this->router->setInput('errornumber',$exception->getCode());
+				$this->addViewerData('errormessage',$exception->getMessage());
+				$this->addViewerData('errornumber',$exception->getCode());
 				
 				if ($exception instanceof ViewException) {
-					$this->router->setInput('errorcode',$exception->getTextCode());
+					$this->addViewerData('errorcode',$exception->getTextCode());
 				}
 			}
 		}
@@ -208,7 +208,9 @@ abstract class Controller {
 			$viewer->setController($this);
 			
 			try {
-				$this->checkIfSignedInRequired();
+				if ($actionmethod != 'error') {
+					$this->checkIfSignedInRequired();
+				}
 				
 				// inside this method must be done everything, headers, all output
 				$result = $viewer->doView($actionmethod,$this->responseformat);
@@ -262,11 +264,11 @@ abstract class Controller {
 					
 					$actiontype = 'view';
 					$actionmethod = 'error';
-					$this->router->setInput('errormessage',$exception->getMessage());
-					$this->router->setInput('errornumber',$exception->getCode());
+					$this->addViewerData('errormessage',$exception->getMessage());
+					$this->addViewerData('errornumber',$exception->getCode());
 					
 					if ($exception instanceof ViewException) {
-						$this->router->setInput('errorcode',$exception->getTextCode());
+						$this->addViewerData('errorcode',$exception->getTextCode());
 					}
 					
 					$this->addViewerData('errortrace',$exception->getFile().' '.$exception->getLine().'; '.$exception->getTraceAsString());

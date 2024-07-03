@@ -178,25 +178,20 @@ abstract class View {
 	protected function viewError() {
 		$this->htmlouttemplate_force = '';
 		// in child classes this can be redefined to use some better error page
-		$this->viewdata['errormessage'] = $this->getInput('errormessage');
-		
-		if ($this->viewdata['errormessage'] == '') {
-			$this->viewdata['errormessage'] = $this->getInput('message');
-		}
-		
+
 		if ($this->viewdata['errormessage'] == '') {
             $this->viewdata['errormessage'] = $this->getRouter()->getMessageFromSession();
         }
+
+		$this->viewdata['message'] = $this->viewdata['errormessage'];
+		unset($this->viewdata['errormessage']);
 		
-		$this->getRouter()->unSetInput('message');
-		
-		$this->viewdata['errorcode'] = $this->getInput('errorcode','alpha');
-		$this->viewdata['errornumber'] = $this->getInput('errornumber','int');
 		$this->viewstatus = 'error';
 		$this->viewstatuscode = 400;
 		
 		if ($this->viewdata['errornumber'] > 0) {
 			$this->viewstatuscode = $this->viewdata['errornumber'];
+
 		} elseif ($this->viewstatuscode > 0) {
 			$this->viewdata['errornumber'] = $this->viewstatuscode;
 		}
