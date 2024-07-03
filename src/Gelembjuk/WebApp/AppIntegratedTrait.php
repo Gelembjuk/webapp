@@ -57,7 +57,7 @@ trait AppIntegratedTrait {
         }
 
         if (empty($url)) {
-            $def_url = $this->application->getDefaultAuthExceptionRedirectUrl();
+            $def_url = $this->getDefaultAuthExceptionRedirectUrl();
 
             if (!empty($def_url)) {
                 $url = $def_url;
@@ -65,6 +65,13 @@ trait AppIntegratedTrait {
         }
 
         throw new Exceptions\AuthRequiredException($errormessage, $url);
+	}
+    /**
+	 * It can be reloaded in a child class to define a single url where to send a user in case if login is required
+	 */
+	protected function getDefaultAuthExceptionRedirectUrl()
+	{
+		return null;
 	}
     protected function actionRequiresSignin()
     {

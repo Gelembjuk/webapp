@@ -2,8 +2,9 @@
 
 namespace Gelembjuk\WebApp;
 
-use \Gelembjuk\WebApp\Exceptions\ViewException as ViewException;
-use \Gelembjuk\WebApp\Exceptions\DoException as DoException;
+use Exceptions\ViewException as ViewException;
+use Exceptions\DoException as DoException;
+use Exceptions\FormException as FormException;
 
 abstract class Controller {
 	use RouterAccessTrait;// includes also AppIntegratedTrait
@@ -117,6 +118,10 @@ abstract class Controller {
 						$htmlaction = $this->getActionOnErrorInHTML($exception, $htmlaction);
 
 					} else {
+						if ($exception instanceof FormException) {
+							// this helps to return input name where an error appeared. It is useful for automation of forms processing
+							$this->addViewerData('input',$exception->getInput());
+						}
 						// get default reaction, for example if errors should be redirected to some specific page 
 						$exception = $this->getDefaultDoException($exception) ?: $exception;
 					}
@@ -465,7 +470,7 @@ abstract class Controller {
 	* Returns an url of an error view for this controller.
 	* If urls must be built with some specific rules, then this function should be reimplemented in a child class.
 	*/
-	protected function getErrorURI($message) 
+	protected function getErrorURI() 
 	{
         
         return $this->makeUrl(array('view'=>'error'));

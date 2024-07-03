@@ -670,13 +670,6 @@ class Application {
 	{
 		return $router->makeUrl($opts);
 	}
-	/**
-	 * It can be reloaded in a child class to define a single url where to send a user in case if login is required
-	 */
-	public function getDefaultAuthExceptionRedirectUrl()
-	{
-		return null;
-	}
 	protected function getRouterNameFromRequest() 
 	{
 		return $this->getDefaultRouter();
