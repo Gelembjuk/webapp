@@ -749,13 +749,7 @@ class Application {
         $this->routersready = [];
         $this->viewsready = [];
 	}
-	/*
-	* Assign application reference to given object. The object must use the Trait Context
-	*/
-	public function bless(&$object)
-	{
-        $object->setApplication($this);
-	}
+	
 	/*
 	* Create new object and set application to it.
 	* The class must use the trait Context
@@ -788,9 +782,13 @@ class Application {
 
 			if (class_exists($custom_class)) {
 				$class = $custom_class;
-			} else {
-				throw new \Exception('Class ' . $class . ' not found');
+
+			} elseif (class_exists($this->classesspace . ucfirst($class))) {
+				$class = $this->classesspace . ucfirst($class);
 			}
+		}
+		if (!class_exists($class)) {
+			throw new \Exception('Class ' . $class . ' not found');
 		}
 		// this method should be used only for objects with standard constructor.
 		// TODO . Verify the class has that constructor (uses trait or so)

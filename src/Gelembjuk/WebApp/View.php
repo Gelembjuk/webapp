@@ -115,9 +115,7 @@ abstract class View {
 			$displaymethodname = 'displayHTML';
 		}
 
-		$result = $this->$displaymethodname();
-
-		return true;
+		return $this->$displaymethodname();
 	}
 	// default view is abstract to force to have it in child classes
 	abstract protected function view();

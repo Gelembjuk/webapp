@@ -9,6 +9,16 @@ abstract class Controller {
 	use RouterAccessTrait;// includes also AppIntegratedTrait
 	
 	protected $actionerrordisplay = 'redirect';
+	/**
+	 * Define where a redirect should go it error happens.
+	 * It is the name of view in corresponding view.
+	 */
+	protected $viewInCaseOfError = '';
+	/**
+	 * The url where a user should be redirected in case of error during an action
+	 * This will be used only if there is no custom url in an exception object
+	 */
+	protected $redirectUrlInCaseOfError = '';
 
 	/**
 	 * Optional properties. Some defaul object to do most of work for this controller
@@ -34,6 +44,9 @@ abstract class Controller {
 		$this->initAuthSession();
 		
 		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
+
+		// this is used for message to display to a user after redirect
+		$messageToDisplay = null;
 		
 		try {
             $this->beforeStart();
@@ -88,42 +101,32 @@ abstract class Controller {
 						throw new \Exception('Unknown error on DO action');
 					}
 					
-					if ($result === true && $this->defaultreaction['success']) {
-                        $result = $this->defaultreaction['success'];
+					if ($result === true) {
+						$result = $this->getDefaultSuccessResponse() ?: $result;
+                    }
+
+					if ($result === true) {
+						$result = new Response\SuccessResponse();
                     }
 				} catch (\Exception $exception) {
 					
 					$htmlaction = $this->actionerrordisplay;
 					
-					if ($exception instanceof ViewException) {// DoException is a child class for ViewException
+					if ($exception instanceof DoException) {// DoException is a child class for ViewException
 						// get action from exception
 						$htmlaction = $this->getActionOnErrorInHTML($exception, $htmlaction);
 
-					} elseif ($this->defaultreaction) {
-                        $url = $this->defaultreaction['error']['url'];
-                        
-                        if (is_array($url)) {
-                        
-                            if (empty($url['message'])) {
-                                $url['message'] = $exception->getMessage();
-                            }
-                        
-                            $url = $this->makeUrl($url);
-                        }
-                        
-                        $exception = new DoException(
-                            $url,
-                            $exception->getMessage(),
-                            $this->defaultreaction['error']['code'],
-                            $this->defaultreaction['error']['number'],
-                            $this->defaultreaction['error']['htmltype']
-                        );
+					} else {
+						// get default reaction, for example if errors should be redirected to some specific page 
+						$exception = $this->getDefaultDoException($exception) ?: $exception;
 					}
 					
 					// error can be displayed with redirect or html page
 					if ($this->isHTMLResp() && $htmlaction == 'redirect') {
 						
 						$actiontype = 'redirect';
+
+						$messageToDisplay = 'e:'.$exception->getMessage();
 
 						$actionmethod = $this->getRedirectUrlOnError($exception, $actionmethod);
 
@@ -141,9 +144,13 @@ abstract class Controller {
 					}
 				}
 				
-				if( is_array($result) ) {
+				if( is_array($result) || $result instanceof Response\Response ) {
 					
-					list($actiontype,$actionmethod,$responseformat) = $result;
+					if (is_array($result)) {
+						list($actiontype,$actionmethod,$responseformat,$message) = $result;
+					} else {
+						list($actiontype,$actionmethod,$responseformat, $message) = $result->getActionInfo();
+					}
 					
 					// this is short way to return universal 'success' for html and other type of response formats
 					// format success:viewaction or just success
@@ -161,9 +168,16 @@ abstract class Controller {
 							$actiontype = 'view';
 						}
 					}
+
+					if ($actiontype == 'redirect' && empty($actionmethod)) {
+						$actionmethod = $this->getDefaultURI();
+					}
 					
-					if ($responseformat != '') {
+					if (!empty($responseformat)) {
 						$this->responseformat = $responseformat;
+					}
+					if (!empty($message)) {
+						$messageToDisplay = $message;
 					}
 				} elseif($actiontype == 'do') {
 					//$result is true and all other values except array and false
@@ -197,10 +211,14 @@ abstract class Controller {
 				$origactiontype = $actiontype;
 				$actiontype = '';
 				
-				if (is_array($result)) {
+				if (is_array($result) || $result instanceof Response\Response) {
 					$origactionmethod = $actionmethod;
 					
-					list($actiontype,$actionmethod) = $result;
+					if (is_array($result)) {
+						list($actiontype,$actionmethod,$responseformat,$message) = $result;
+					} else {
+						list($actiontype,$actionmethod,$responseformat,$message) = $result->getActionInfo();
+					}
 					
 					if ($actiontype != 'redirect') {
 						$actiontype = '';
@@ -208,6 +226,10 @@ abstract class Controller {
 					} 
 					unset($origactionmethod );
 					$result = true;
+
+					if (!empty($message)) {
+						$messageToDisplay = $message;
+					}
 				}
 				
 				if ($result !== true && $result !== false) {
@@ -226,6 +248,8 @@ abstract class Controller {
 				if ($this->isHTMLResp() && $htmlaction == 'redirect') {
 					
 					$actiontype = 'redirect';
+
+					$messageToDisplay = 'e:'.$exception->getMessage(); // e: means eror and it is used to select correct display class
 					// the exception can contain url
 					$actionmethod = $this->getRedirectUrlOnError($exception, $actionmethod);
 
@@ -257,6 +281,9 @@ abstract class Controller {
 			
 		}
 		if ($actiontype == 'redirect') {
+			if (!empty($messageToDisplay)) {
+				$this->router->setMessageToSession($messageToDisplay);
+			}
 			$this->beforeEnd();
 			$this->redirect($actionmethod);
 		}
@@ -291,6 +318,22 @@ abstract class Controller {
 		return ($this->responseformat == '' || $this->responseformat == 'html');
 	}
 	/**
+	 * This can be redefined in a child class. This is useful when reaction in many actions is same,
+	 * for example, always redirect to same page 
+	 */
+	protected function getDefaultSuccessResponse() 
+	{
+		return null;
+	}
+	/**
+	 * This can be redefined in a child class. This is useful when reaction in many actions is same,
+	 * for example, always redirect to same page 
+	 */
+	protected function getDefaultDoException(\Exception $e)
+	{
+		return null;
+	}
+	/**
 	 * In case of exception for Do or View this function will be called to get an action (redirect or just view)
 	 * View means an error will be displayed as a html page in same call.
 	 * Redirect means there will be additional redirect to some other page
@@ -313,14 +356,22 @@ abstract class Controller {
 			$actionmethod = $exception->getUrl();
 			
 			if($actionmethod == 'defaultview') {
-				$actionmethod = $this->getDefaultURI($exception->getMessage());
+				$actionmethod = $this->getDefaultURI();
 			}
 		}
-		if (empty($actionmethod)) {
-			$actionmethod = $this->getErrorURI($exception->getMessage());
+		if (empty($actionmethod) && !empty($this->redirectUrlInCaseOfError)) {
+			// use some default url
+			$actionmethod = $this->redirectUrlInCaseOfError;
+		}
+		if (empty($actionmethod) && !empty($this->viewInCaseOfError)) {
+			// it can be custom view. so redirect to it
+			$actionmethod = $this->makeUrl(['view' => $this->viewInCaseOfError]);
 		}
 		if (empty($actionmethod)) {
-			$actionmethod = $this->getDefaultURI($exception->getMessage());
+			$actionmethod = $this->getErrorURI();
+		}
+		if (empty($actionmethod)) {
+			$actionmethod = $this->getDefaultURI();
 		}
 		if (empty($actionmethod)) {
 			$actionmethod = $originalActionMethod;
@@ -417,7 +468,7 @@ abstract class Controller {
 	protected function getErrorURI($message) 
 	{
         
-        return $this->makeUrl(array('view'=>'error', 'message' => $message));
+        return $this->makeUrl(array('view'=>'error'));
 	}
 	/**
 	* Get viewer associated with this controller
@@ -468,13 +519,8 @@ abstract class Controller {
 	* redirect url is specified in an end of action.
 	* Reimplement the function in a child class if some other specific link should be generated.
 	*/
-	protected function getDefaultURI($message = null) 
+	protected function getDefaultURI() 
 	{
-        return $this->makeUrl(array('message'=>$message));
-    }
-    
-    protected function defineReaction($defaultreaction)
-    {
-        $this->defaultreaction = $defaultreaction;
+        return $this->makeUrl();
     }
 }
