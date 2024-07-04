@@ -12,7 +12,7 @@ class Response  {
     protected $responseformat;
     protected $message = null;
 
-    public function __construct($kind, $url = '', $responseformat = 'html') 
+    public function __construct($kind, $url = '', $responseformat = '') 
     {
         $this->kind = $kind;
         $this->url = $url;

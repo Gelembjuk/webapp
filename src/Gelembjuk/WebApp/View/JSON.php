@@ -38,10 +38,9 @@ class JSON extends Display {
 		
 		$responsecode = 200;
 	
-		if ($this->data['errorcode'] > 0) {
-			$responsecode = $this->data['errorcode'];
-		} elseif ($this->data['statuscode'] > 0) {
+		if ($this->data['statuscode'] > 0) {
 			$responsecode = $this->data['statuscode'];
+
 		} elseif ($this->data['errornumber'] > 0) {
 			$responsecode = $this->data['errornumber'];
 		}
@@ -67,18 +66,22 @@ class JSON extends Display {
 	protected function prepareResponseStructure() {
 		if ($this->options['status'] != 'ok') {
 			$status = 'error';
-			
+
 			if ($this->data['errorcode'] != '') {
 				$status = 'error_'.$this->data['errorcode'];
 			}
 			
 			$message = $this->data['errormessage'];
 
+			if (empty($message) && !empty($this->data['message'])) {
+				$message = $this->data['message'];
+			}
+
 			if ($message == '') {
 				$message = 'Unlnown error';
 			}
 			
-			$displaydata = array('status' => $status,'message'=>$this->data['errormessage']);
+			$displaydata = array('status' => $status,'message'=>$message);
 
 			if ($this->data['errornumber'] > 0) {
 				$displaydata['code'] = $this->data['errornumber'];
@@ -86,6 +89,7 @@ class JSON extends Display {
 
 			unset($this->data['errorcode']);
 			unset($this->data['errormessage']);
+			unset($this->data['message']);
 			unset($this->data['errornumber']);
 
 			if (count($this->data) > 0) {

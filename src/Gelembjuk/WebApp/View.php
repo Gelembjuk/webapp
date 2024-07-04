@@ -87,7 +87,7 @@ abstract class View {
 		
 		// get view data from router. there can be some view data from router or application objects
 		$this->viewdata = array_merge($this->viewdata, $this->getRouter()->shiftViewerData());
-		
+
 		// result is not important there. 
 		// if view throws error then it will be catched above
 		$result = $this->callMethodExternally($viewmethodname);
@@ -115,7 +115,9 @@ abstract class View {
 			$displaymethodname = 'displayHTML';
 		}
 
-		return $this->$displaymethodname();
+		$this->$displaymethodname();
+
+		return true;
 	}
 	// default view is abstract to force to have it in child classes
 	abstract protected function view();

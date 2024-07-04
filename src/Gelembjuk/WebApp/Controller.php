@@ -4,7 +4,6 @@ namespace Gelembjuk\WebApp;
 
 use Exceptions\ViewException as ViewException;
 use Exceptions\DoException as DoException;
-use Exceptions\FormException as FormException;
 
 abstract class Controller {
 	use RouterAccessTrait;// includes also AppIntegratedTrait
@@ -106,7 +105,7 @@ abstract class Controller {
 						$htmlaction = $this->getActionOnErrorInHTML($exception, $htmlaction);
 
 					} else {
-						if ($exception instanceof FormException) {
+						if ($exception instanceof Exceptions\FormException) {
 							// this helps to return input name where an error appeared. It is useful for automation of forms processing
 							$this->addViewerData('input',$exception->getInput());
 						}
@@ -126,17 +125,18 @@ abstract class Controller {
 					} else {
 						list($actiontype,$actionmethod,$this->responseformat) = 
 							$this->router->setErrorPageForException($exception);
+							
 					}
 				}
 				
 				if( is_array($result) || $result instanceof Response\Response ) {
-					
+
 					if (is_array($result)) {
 						list($actiontype,$actionmethod,$responseformat,$message) = $result;
 					} else {
 						list($actiontype,$actionmethod,$responseformat, $message) = $result->getActionInfo();
 					}
-					
+
 					// this is short way to return universal 'success' for html and other type of response formats
 					// format success:viewaction or just success
 					if (strpos($actiontype,'success') === 0) {
@@ -161,6 +161,7 @@ abstract class Controller {
 					if (!empty($responseformat)) {
 						$this->responseformat = $responseformat;
 					}
+					
 					if (!empty($message)) {
 						$messageToDisplay = $message;
 					}
@@ -177,7 +178,7 @@ abstract class Controller {
 				}
 			}
 		}
-		
+
 		// do view action
 		// view can be used as separate action or as part of DO action to display a state
 		if ($actiontype == 'view') {
@@ -205,17 +206,17 @@ abstract class Controller {
 					} else {
 						list($actiontype,$actionmethod,$responseformat,$message) = $result->getActionInfo();
 					}
-					
+					// view can return only true or redirect. Nothing else
 					if ($actiontype != 'redirect') {
 						$actiontype = '';
 						$actionmethod = $origactionmethod ;
-					} 
+					} else {
+						if (!empty($message)) {
+							$messageToDisplay = $message;
+						}
+					}
 					unset($origactionmethod );
 					$result = true;
-
-					if (!empty($message)) {
-						$messageToDisplay = $message;
-					}
 				}
 				
 				if ($result !== true && $result !== false) {
@@ -284,7 +285,7 @@ abstract class Controller {
 		// to be sure the view points to this controller
 		$viewer->setController($this);
 		
-		$result = $viewer->doView('offline',$this->responseformat);
+		$viewer->doView('offline',$this->responseformat);
 			
 		return true;
 	}
