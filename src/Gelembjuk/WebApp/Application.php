@@ -6,25 +6,19 @@ class Application {
 	use \Gelembjuk\Logger\ApplicationLogger;
 	use \Gelembjuk\Locale\GetTextTrait;
 	
-	protected static $instance;
-
 	protected $errorhandler = null;
+
+	protected $created_objects = [];
+	protected $created_forced_objects = [];
+
 	protected $dbobjects;
 	protected $dbengines;
 	protected $views;
-	protected $controllers;
 	protected $routers = [];
 
 	protected $class_alias = [];
 	protected $class_builders = [];
-	/*
-	* Mocks for objects
-	*/
-	protected $dbobjectsready = [];
-    protected $dbenginesready = [];
-    protected $controllersready = [];
-    protected $routersready = [];
-    protected $viewsready = [];
+
 	/**
 	* @var
 	* First router object loaded. It can give some useful info about the application mode
@@ -35,53 +29,37 @@ class Application {
 	protected $defaultcontrollername = '';
 	protected $cache;
 	
-	protected $localeautoload;
-	protected $config;
-	protected $options;
-	protected $configextra;
+	protected $localeautoload = false;
+	protected $options = [];
+	protected $config = null;
 	
 	protected $exceptiononurlmake = true;
 	
-	protected $userid;
+	protected $userid = 0;
 
 	protected $requestUniqueID;
-	
-	/**
-	* Class spaces for MVC model components
-	* This can be modified by application in case if multiple spaces are needed
-	* For example, for admin side, MVC can be isolated 
-	*/
-	protected $controllerspace;
-	protected $viewspace;
-	protected $classesspace;
-	protected $dbclassspace;
-	protected $routerspace;
 
-	public function __construct() {
-		$this->config = null;
-		$this->configextra = null;
-		$this->userid = 0;
-		$this->dbobjects = array();
-		$this->dbengines = array();
-		$this->views = array();
-		$this->controllers = array();
+	public function __construct() 
+	{
+		$this->dbobjects = [];
+		$this->dbengines = [];
 		$this->localeautoload = false;
 
 		$this->requestUniqueID = substr(md5(uniqid()),0,15);
 	}
-	public static function getInstance() {
-		$class = get_called_class();
-		
-		if (!is_array(self::$instance)) {
-			self::$instance = [];
+	public static function getInstance() 
+	{
+		static $instance;
+
+		if (!$instance) {
+			$instance = new static();
 		}
-		if (!isset( self::$instance[$class] )) {
-			self::$instance[$class] = new static();
-		}
-		return self::$instance[$class];
+
+		return $instance;
 	}
 	
-	public function init($config,$options = []) {
+	public function init(object $config,$options = []) 
+	{
 		$this->config = $config;
 		$this->options = $options;
 		
@@ -147,51 +125,6 @@ class Application {
                 );
         }
 		
-		// COMPONENTS LOCATION ===========================================================================
-		if (isset($this->options['applicationnamespaceprefix'])) {
-            // Use standard model where coponents are sub namespaces with standard names
-            // this works for most cases, including multiple spaces
-			if (!isset($this->options['classesnamespace'])) {
-				$this->options['classesnamespace'] = $this->options['applicationnamespaceprefix'] . 'Classes\\';
-			}
-			if (!isset($this->options['controllersnamespace'])) {
-				$this->options['controllersnamespace'] = $this->options['applicationnamespaceprefix'] . 'Controllers\\';
-			}
-			if (!isset($this->options['databasenamespace'])) {
-				$this->options['databasenamespace'] = $this->options['applicationnamespaceprefix'] . 'Database\\';
-			}
-			if (!isset($this->options['viewsnamespace'])) {
-				$this->options['viewsnamespace'] = $this->options['applicationnamespaceprefix'] . 'Views\\';
-			}
-			if (!isset($this->options['routersnamespace'])) {
-				$this->options['routersnamespace'] = $this->options['applicationnamespaceprefix'] . 'Routers\\';
-			}
-		} elseif (isset($this->options['applicationnamespace'])) {
-            // Use simplest approach when components have no sub namespaces and, in fact are in one folder
-            // this works for small applications
-			if (!isset($this->options['classesnamespace'])) {
-                $this->options['classesnamespace'] = $this->options['applicationnamespace'];
-            }
-            if (!isset($this->options['controllersnamespace'])) {
-                $this->options['controllersnamespace'] = $this->options['applicationnamespace'];
-            }
-            if (!isset($this->options['databasenamespace'])) {
-                $this->options['databasenamespace'] = $this->options['applicationnamespace'];
-            }
-            if (!isset($this->options['viewsnamespace'])) {
-                $this->options['viewsnamespace'] = $this->options['applicationnamespace'];
-            }
-            if (!isset($this->options['routersnamespace'])) {
-                $this->options['routersnamespace'] = $this->options['applicationnamespace'];
-            }
-        }
-		
-        $this->controllerspace = $this->options['controllersnamespace'];
-        $this->viewspace = $this->options['viewsnamespace'];
-		$this->classesspace = $this->options['classesnamespace'];
-        $this->dbclassspace = $this->options['databasenamespace'];
-        $this->routerspace = $this->options['routersnamespace'];
-		
 		$this->options['basehost'] = $this->getBasehost();
 		
 		if (isset($this->options['defaultroutername'])) {
@@ -200,6 +133,16 @@ class Application {
 		if (isset($this->options['defaultcontrollername'])) {
             $this->defaultcontrollername = $this->options['defaultcontrollername'];
         }
+	}
+	protected function getAppNameSpace() 
+	{
+		if (isset($this->options['namespace'])) {
+			return $this->options['namespace'];
+		}
+		// automatically detect namespace of this class
+		$namespace = get_class($this);
+		$namespace = substr($namespace,0,strrpos($namespace,'\\'));
+		return $namespace.'\\';
 	}
 	protected function registerClassAlias($alias,$class) 
 	{
@@ -235,26 +178,38 @@ class Application {
 		$this->options[$key] = $value;
 		return true;
 	}
-	public function action() {
+	/**
+	 * This is the start function. It starts all the magic
+	 */
+	public function action() 
+	{
 		// controller will be detected by router and created
 		$controller = $this->getController();
+		// remember the controller for the future to know what is current running controller
+		$this->actioncontroller = $controller;
 
 		if ($this->getConfig('offline')) {
 			return $controller->actionOffline();
 		}
-		
+		// run controller action. This does all the job
 		return $controller->action();
 	}
-	public function setUserID($userid) {
+	public function setUserID($userid) 
+	{
 		$this->userid = $userid;
 	}
-	public function getUserID() {
+	public function getUserID() 
+	{
 		return $this->userid;
 	}
-	public function getUserRecord() {
+	public function getUserRecord() 
+	{
 		return array('id' => $this->getUserID());
 	}
-	protected function getControllerFullClass($controllerclass, $prefix = '')
+	/**
+	 * In case if we want to have controllers in a different location from standard , we need to modify our router
+	 */
+	protected function getControllerFullClass($controllerclass)
 	{
         if (substr($controllerclass,0,1) == '\\') {
             // this is absolute class name
@@ -262,23 +217,29 @@ class Application {
         }
         
         $controllerclass = ucfirst($controllerclass);
+
+		$subspace = 'Controllers\\';
+
+		if ($this->routerfront) {
+			$subspace = $this->routerfront->getControllerSubSpace();
+		}
         
-        if ($prefix == '') {
-            return $this->controllerspace . $controllerclass;
-        } else {
-            return $prefix . $controllerclass;
-        }
+        return $this->getAppNameSpace(). $subspace . $controllerclass;
     }
-	public function getController($controllername = '',$exceptiononnotfound = false, $alwayscreatenew = false) {
+
+	public function getController($controllername = '',$exceptiononnotfound = false, $alwayscreatenew = false) 
+	{
 		if ($controllername != '') {
 			$controllername = ucfirst($controllername);
 		}
-		
+		// this would build the default router
 		$router = $this->getRouter();
 		
 		if ($controllername == '') {
+			// when a script starts usually the first call is with the empty controller name
 			if ($this->getOption('DefaultController') != '') {
 				$controllername = ucfirst($this->getOption('DefaultController'));
+
 			} else {
 				if ($this->routerfront === null) {
                     $this->routerfront = $router;
@@ -286,6 +247,12 @@ class Application {
 				}
 				
 				$controllername = $router->getController();
+			}
+		} else {
+			// if there was no any router used yet, remember this one as the starting router
+			if ($this->routerfront === null) {
+				$this->routerfront = $router;
+				$this->frontRouterLoaded();
 			}
 		}
 		
@@ -311,12 +278,12 @@ class Application {
 		}
 		
 		// this is for mocking on testing
-		if (array_key_exists($controllerpath,$this->controllersready)) {
-            return $this->controllersready[$controllerpath];
+		if (array_key_exists($controllerpath,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$controllerpath];
 		}
 		
-		if (!$alwayscreatenew && isset($this->controllers[$controllerpath])) {
-            return $this->controllers[$controllerpath];
+		if (!$alwayscreatenew && isset($this->created_objects[$controllerpath])) {
+            return $this->created_objects[$controllerpath];
         }
 
 		$controller = new $controllerpath($this);
@@ -324,7 +291,7 @@ class Application {
 		$controller->withRouter($router);
 		$controller->init();
 		
-		$this->controllers[$controllerpath] = $controller;
+		$this->created_objects[$controllerpath] = $controller;
 		
 		return $controller;
 	}
@@ -335,13 +302,8 @@ class Application {
 	{
         // Implement somethign in your application
 	}
-	public function setActionController($object) {
-		$this->actioncontroller = $object;
-	}
-	public function getActionController() {
-		return $this->actioncontroller;
-	}
-	public function getCache() {
+	public function getCache() 
+	{
 		if ($this->cache) {
 			return $this->cache;
 		}
@@ -356,10 +318,11 @@ class Application {
             // this is absolute class name
             return $routerclass;
         }
-        return $this->routerspace . ucfirst($routerclass);
+		// ROuters are always in a same place. Inmomost cases we need only one router per application
+        return $this->getAppNameSpace() .'Routers\\' . ucfirst($routerclass);
     }
-	public function getRouter($routername = '', $alwayscreatenew = false) {
-		
+	public function getRouter($routername = '', $alwayscreatenew = false) 
+	{
 		if ($routername == '') {
 			$defroutername = $this->getRouterNameFromRequest();
 			$routername = $defroutername;	
@@ -372,12 +335,12 @@ class Application {
 			$routername = $this->getRouterFullClass($defroutername);
 		}
 		// this is for mocking on testing
-        if (array_key_exists($routername,$this->routersready)) {
-            return $this->routersready[$routername];
+        if (array_key_exists($routername,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$routername];
         }
 		
-		if (!$alwayscreatenew && $routername != '' && isset($this->routers[$routername])) {
-			return $this->routers[$routername];
+		if (!$alwayscreatenew && isset($this->created_objects[$routername])) {
+			return $this->created_objects[$routername];
 		}
 		
 		if (!class_exists($routername)) {
@@ -403,22 +366,16 @@ class Application {
 			}
 		}
 		
-		$this->routers[$routername] = $router;
-		
-		unset($router);
-		
-		return $this->routers[$routername];
+		$this->created_objects[$routername] = $router;
+
+		return $router;
 	}
 	
-	protected function getDBEngine($profile = 'default') {
+	protected function getDBEngine($profile = 'default') 
+	{
 		if ($profile == '') {
 			$profile = 'default';
 		}
-		
-		// this is for mocking on testing
-        if (array_key_exists($engineclass,$this->dbenginesready)) {
-            return $this->dbenginesready[$engineclass];
-        }
 		
 		if (isset($this->dbengines[$profile])) {
 			return $this->dbengines[$profile];
@@ -441,6 +398,11 @@ class Application {
 			$engineclass = $engines[$engineclass];
 		}
 
+		// this is for mocking on testing
+        if (array_key_exists($engineclass,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$engineclass];
+        }
+
 		if (!class_exists($engineclass)) {
 			throw new \Exception(sprintf('DB class %s not found',$engineclass));
 		}
@@ -457,13 +419,29 @@ class Application {
 		
 		return $object;
 	}
-	
+	protected function getDBOFullClass($dboclass)
+    {
+        if (substr($dboclass,0,1) == '\\') {
+            // this is absolute class name
+            return $dboclass;
+        }
+		$dboclass = str_replace('/','\\',$dboclass);
+
+		$subspace = 'Database\\';
+
+		if ($this->routerfront) {
+			$subspace = $this->routerfront->getDatabaseSubSpace();
+		}
+
+        return $this->getAppNameSpace() .$subspace . ucfirst($dboclass);
+    }
 	public function getDBO($name,$profile = 'default') 
 	{	
         // this is for mocking on testing
         $classpath = $this->getDBOFullClass($name);
-        if (array_key_exists($classpath,$this->dbobjectsready)) {
-            return $this->dbobjectsready[$classpath];
+
+        if (array_key_exists($classpath,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$classpath];
         }
         
 		if (isset($this->dbobjects[$name.'_'.$profile])) {
@@ -472,24 +450,16 @@ class Application {
 
 		return $this->getDBONew($name,$profile);
 	}
-	protected function getDBOFullClass($dboclass)
-    {
-        if (substr($dboclass,0,1) == '\\') {
-            // this is absolute class name
-            return $dboclass;
-        }
-		$dboclass = str_replace('/','\\',$dboclass);
-        return $this->dbclassspace . ucfirst($dboclass);
-    }
-	public function getDBONew($name,$profile = 'default') {		
-		
+	
+	public function getDBONew($name,$profile = 'default') 
+	{		
 		$engine = $this->getDBEngine($profile);
 		
 		$classpath = $this->getDBOFullClass($name);
 
 		// this is for mocking on testing
-        if (array_key_exists($classpath,$this->dbobjectsready)) {
-            return $this->dbobjectsready[$classpath];
+        if (array_key_exists($classpath,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$classpath];
         }
 		
 		if (!class_exists($classpath)) {
@@ -513,7 +483,12 @@ class Application {
             // this is absolute class name
             return $viewclass;
         }
-        return $this->viewspace . ucfirst($viewclass);
+		$subspace = 'Views\\';
+
+		if ($this->routerfront) {
+			$subspace = $this->routerfront->getViewsSubSpace();
+		}
+        return $this->getAppNameSpace() .$subspace . ucfirst($viewclass);
     }
 	public function getView($name,$controller) 
 	{		
@@ -532,8 +507,8 @@ class Application {
 		}
 		
 		// this is for mocking on testing
-        if (array_key_exists($classpath,$this->viewsready)) {
-            return $this->viewsready[$classpath];
+        if (array_key_exists($classpath,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$classpath];
         }
 		
 		$object = new $classpath($this, $controller, $this->options);
@@ -553,7 +528,7 @@ class Application {
 		$classpath .= '\\'.$widgetName;
 
 		if (!class_exists($classpath)) {
-			throw new \Exception(sprintf('View class %s not found',$classpath));
+			throw new \Exception(sprintf('Widget class %s not found',$classpath));
 		}
 
 		if (!is_subclass_of($classpath, '\\Gelembjuk\\WebApp\\Widget')) {
@@ -573,56 +548,40 @@ class Application {
 		}
 		return null;
 	}
-	public function getConfigExtra($name) 
+	
+	public function getOption($name) 
 	{
-		if ($this->configextra == null) {
-			// load config before using
-			
-			if (is_array($this->options['extraconfig'])) {
-				$configfile = $this->options['extraconfig'][0];
-				$configclass = $this->options['extraconfig'][1];
-				
-				if (file_exists($configfile)) {
-					require_once($configfile);
-					
-					if (class_exists($configclass)) {
-						$this->configextra = new $configclass();
-					}
-				}
-			}
-			
-			if ($this->configextra == null) {
-				$this->configextra = new \stdClass();
-			}
-		}
-		return $this->configextra->$name;
-	}
-	public function getOption($name) {
 		return $this->options[$name];
 	}
-	public function setErrorHandler($errorhandlerobject) {
+	public function setErrorHandler($errorhandlerobject) 
+	{
 		$this->errorhandler = $errorhandlerobject;
 	}
-	public function getErrorHandler() {
+	public function getErrorHandler() 
+	{
 		return $this->errorhandler;
 	}
-	public function getBasehost() {
+	// Overload this in your child application to return base hostname differently if needed
+	public function getBasehost() 
+	{
 		if ($this->getConfig('basehost') != '') {
 			return $this->getConfig('basehost');
 		}
 		$hostinfo = new \Gelembjuk\WebApp\Server\Host();
 		return $hostinfo->getBaseHost();
 	}
-	// build urls
-	public function makeUrl($controllername,$opts = array()) 
+	/**
+	 * Build url for the application
+	 * Controller can be provided as an object or just a name
+	 */
+	public function makeUrl($controllername = '',$opts = []) 
 	{
         try {
             if ($controllername == '') {
                 // try to get currect action controller
-                $curactioncontrollerobject = $this->getActionController();
-                
-                if (is_object($curactioncontrollerobject)) {
-                    $controllername = $curactioncontrollerobject;
+				// if a controller name is empty then we just reuse current controller
+                if (is_object($this->actioncontroller)) {
+                    $controllername = $this->actioncontroller;
                 }
             }
             
@@ -666,7 +625,7 @@ class Application {
         
         return $baseurl . $relativeurl;
     }
-	public function makeUrlByRouter($router,$opts = array()) 
+	public function makeUrlByRouter($router,$opts = []) 
 	{
 		return $router->makeUrl($opts);
 	}
@@ -682,7 +641,7 @@ class Application {
 	}
 	protected function getDefaultRouter()
 	{
-        if ($this->defaultroutername == '') {
+        if (empty($this->defaultroutername)) {
             // no any router provided
             // use defauls router
             return '\\Gelembjuk\\WebApp\\Router';
@@ -693,96 +652,63 @@ class Application {
 	{
         return $this->defaultcontrollername;
 	}
-	
-	public function setStandardClassObjectReady($object, $type, $classname)
+	/**
+	 * This is used for testing. To set some Mock object to be used when
+	 * a system requests to create a new object of this class
+	 */
+	public function setForcedClassObject($object, $classname)
 	{
-        if ($type == 'controller') {
-            $this->controllersready[$classname] = $object;
-            
-        } elseif ($type == 'dbobject') {
-            $this->dbobjectsready[$classname] = $object;
-            
-        } elseif ($type == 'dbengine') {
-            $this->dbenginesready[$classname] = $object;
-            
-        } elseif ($type == 'router') {
-            $this->routersready[$classname] = $object;
-            
-        } elseif ($type == 'view') {
-            $this->viewsready[$classname] = $object;
-        } 
+		$this->created_forced_objects[$classname] = $object;
         
         return true;
 	}
-	public function removeStandardClassObjectReady($type, $classname)
+	public function removeForcedClassObject($classname)
 	{
-        if ($type == 'controller') {
-            unset($this->controllersready[$classname]);
-            
-        } elseif ($type == 'dbobject') {
-            unset($this->dbobjectsready[$classname]);
-            
-        } elseif ($type == 'dbengine') {
-            unset($this->dbenginesready[$classname]);
-            
-        } elseif ($type == 'router') {
-            unset($this->routersready[$classname]);
-            
-        } elseif ($type == 'view') {
-            unset($this->viewsready[$classname]);
-        } 
-        
+		unset($this->created_forced_objects[$classname]);
         return true;
 	}
-	public function removeAllStandardClassObjectReady()
+	public function removeAllForcedClassObjects()
 	{
-        $this->controllersready = [];
-        $this->dbobjectsready = [];
-        $this->dbenginesready = [];
-        $this->routersready = [];
-        $this->viewsready = [];
+        $this->created_forced_objects = [];
 	}
 	
-	/*
-	* Create new object and set application to it.
-	* The class must use the trait Context
-	* It is old method. Deprecated
-	*/
-	public function newBlessed($class)
-	{
-		$object = new $class();
-
-		if (method_exists($object, 'setApplication')) { 
-        	$object->setApplication($this);
-		}
-		
-        return $object;
-	}
 
 	public function new($class) 
 	{
 		$lower_name = strtolower($class);
 
 		if (isset($this->class_builders[$lower_name])) {
-			// this is rady object. Justb return it
+			// this is ready object. Justb return it
 			return $this->class_builders[$lower_name];
 		}
 		if (isset($this->class_alias[$lower_name])) {
 			$class = $this->class_alias[$lower_name];
 		}
 		if (!class_exists($class)) {
-			$custom_class = $this->classesspace . str_replace('/','\\',$class);
+			$classspace = 'Classes\\';
+
+			if ($this->frontRouter) {
+				$classspace = $this->frontRouter->getClassesSubSpace();
+			}
+
+			$classspace = $this->getAppNameSpace() . $classspace;
+
+			$custom_class = $classspace . str_replace('/','\\',$class);
 
 			if (class_exists($custom_class)) {
 				$class = $custom_class;
 
-			} elseif (class_exists($this->classesspace . ucfirst($class))) {
-				$class = $this->classesspace . ucfirst($class);
+			} elseif (class_exists($classspace . ucfirst($class))) {
+				$class = $classspace . ucfirst($class);
 			}
 		}
 		if (!class_exists($class)) {
 			throw new \Exception('Class ' . $class . ' not found');
 		}
+		// this is mocking for testing
+		if (array_key_exists($class,$this->created_forced_objects)) {
+            return $this->created_forced_objects[$class];
+        }
 		// this method should be used only for objects with standard constructor.
 		// TODO . Verify the class has that constructor (uses trait or so)
 		$object = new $class($this);
@@ -796,7 +722,8 @@ class Application {
 	/**
 	 * It is alias. It is used in the code to create objects
 	 */
-	public function get($class) {
+	public function get($class) 
+	{
 		return $this->single($class);
 	}
 	public function single($class) 

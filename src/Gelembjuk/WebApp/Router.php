@@ -34,6 +34,23 @@ class Router {
 	public function init() 
 	{
 	}
+	// This is used to control location of controllers. It is used in default implementation of getControllerClass
+	public function getControllerSubSpace()
+	{
+		return 'Controllers\\';
+	}
+	public function getDatabaseSubSpace()
+	{
+		return 'Database\\';
+	}
+	public function getViewsSubSpace()
+	{
+		return 'Views\\';
+	}
+	public function getClassesSubSpace()
+	{
+		return 'Classes\\';
+	}
 	public function detectLocale() 
 	{
 		if ($this->options['locale'] != '') {

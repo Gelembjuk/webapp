@@ -39,8 +39,6 @@ abstract class Controller {
 	}
 	public function action() 
 	{
-		$this->application->setActionController($this);
-		
 		$this->initAuthSession();
 		
 		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
@@ -271,8 +269,6 @@ abstract class Controller {
 	}
 	public function actionOffline() 
 	{
-		$this->application->setActionController($this);
-		
 		list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
 		
 		// set response format to error handler. so if error happens 
