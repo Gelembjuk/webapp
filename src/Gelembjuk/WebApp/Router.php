@@ -6,7 +6,8 @@ class Router {
 	use \Gelembjuk\Logger\ApplicationLogger;
 	use \Gelembjuk\Locale\GetTextTrait;
 	
-	protected $input = array();
+	protected $input = [];
+	protected $initialViewData = [];
 	protected $files = null;
 	
 	protected $actiontype = '';
@@ -343,14 +344,33 @@ class Router {
 		$function = new \ReflectionClass(static::class);
 		return $function->getShortName();
 	}
-	public function setErrorPage($message,$code = '',$number = 0, $responseformat = '') 
+	public function setErrorPage($message,$code = '',$number = 0, $traceinfo = '') 
 	{
-		$this->setInput('view','error');
-		$this->setInput('errormessage',$message);
-		$this->setInput('errorcode',$code);
-		$this->setInput('errornumber',$number);
-		$this->setInput('responseformat',$responseformat);
-		$this->setUpActionInfo();
+		$this->actiontype = 'view';
+        $this->actionmethod = 'error';
+
+		$this->addViewerData('errormessage',$message);
+		$this->addViewerData('errorcode',$code);
+		$this->addViewerData('errornumber',$number);
+		$this->addViewerData('errortrace',$traceinfo);
+
+		return $this->getActionInfo();
+	}
+	public function setErrorPageForException($exception) 
+	{
+		$code = 'error';
+
+		if ($exception instanceof ViewException) {
+			$code = $exception->getTextCode();
+		}
+		
+		$traceinfo = $exception->getFile().' '.$exception->getLine().'; '.$exception->getTraceAsString();
+
+		return $this->setErrorPage(
+			$exception->getMessage(),
+			$code,
+			$exception->getCode(),
+			$traceinfo);
 	}
 	public function dumpInput() {
 		print_r($this->input);
@@ -450,6 +470,23 @@ class Router {
         // this does nothing by default. Use it to do action
         // similar to traditional mod_rewrite
         return true;
+	}
+	/**
+	 * It is used to send some prepared data to viewer collected before viewer is created
+	 */
+	public function shiftViewerData() 
+	{
+		$data = $this->initialViewData;
+		$this->initialViewData = [];
+		return $data;
+	}
+	/**
+    * Add some data to display with a viewer in an end of an action (without redirect)
+    * This is useful for cases when non HTML response is used and controller must return somethign after an action
+	*/
+	public function addViewerData($name,$value) 
+	{
+		$this->initialViewData[$name] = $value;
 	}
 	/**
 	* This method can be redefined in the child class to implement custom way to determine action

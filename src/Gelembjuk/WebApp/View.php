@@ -85,8 +85,8 @@ abstract class View {
 			}
 		}
 		
-		// get view data from controller. it can pass something
-		$this->viewdata = array_merge($this->viewdata,$this->controller->shiftViewerData());
+		// get view data from router. there can be some view data from router or application objects
+		$this->viewdata = array_merge($this->viewdata, $this->getRouter()->shiftViewerData());
 		
 		// result is not important there. 
 		// if view throws error then it will be catched above

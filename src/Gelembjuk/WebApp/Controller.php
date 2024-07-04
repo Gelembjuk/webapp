@@ -28,7 +28,6 @@ abstract class Controller {
 	protected $def_objects_pool_name = null;
 
 	protected $defviewname = '';
-	protected $viewdata = [];
 	
 	protected $defaultreaction = null;
 	
@@ -52,11 +51,8 @@ abstract class Controller {
 		try {
             $this->beforeStart();
 		} catch(\Exception $e) {
-            $actiontype = 'view';
-            $actionmethod = 'error';
-            
-            $this->addViewerData('errormessage',$e->getMessage());
-            $this->addViewerData('errornumber',$e->getCode());
+			list($actiontype,$actionmethod,$this->responseformat) = 
+				$this->router->setErrorPageForException($e);
 		}
 		
 		// set response format to error handler. so if error happens 
@@ -78,14 +74,8 @@ abstract class Controller {
 				
 				return ;
 			} catch (\Exception $exception) {
-				$actiontype = 'view';
-				$actionmethod = 'error';
-				$this->addViewerData('errormessage',$exception->getMessage());
-				$this->addViewerData('errornumber',$exception->getCode());
-				
-				if ($exception instanceof ViewException) {
-					$this->addViewerData('errorcode',$exception->getTextCode());
-				}
+				list($actiontype,$actionmethod,$this->responseformat) = 
+					$this->router->setErrorPageForException($exception);
 			}
 		}
 		
@@ -125,7 +115,7 @@ abstract class Controller {
 						// get default reaction, for example if errors should be redirected to some specific page 
 						$exception = $this->getDefaultDoException($exception) ?: $exception;
 					}
-					
+
 					// error can be displayed with redirect or html page
 					if ($this->isHTMLResp() && $htmlaction == 'redirect') {
 						
@@ -136,16 +126,8 @@ abstract class Controller {
 						$actionmethod = $this->getRedirectUrlOnError($exception, $actionmethod);
 
 					} else {
-						$code = 'error';
-						
-						if ($exception instanceof DoException) {
-							$code = $exception->getTextCode();
-						}
-
-						$this->addViewerData('errortrace',$exception->getFile().' '.$exception->getLine().'; '.$exception->getTraceAsString());
-						
-						$this->router->setErrorPage($exception->getMessage(),$code,$exception->getCode(), $this->responseformat);
-						list($actiontype,$actionmethod,$this->responseformat) = $this->router->getActionInfo();
+						list($actiontype,$actionmethod,$this->responseformat) = 
+							$this->router->setErrorPageForException($exception);
 					}
 				}
 				
@@ -195,7 +177,6 @@ abstract class Controller {
 						$actionmethod = $this->getDefaultURI();
 					}
 				}
-				
 			}
 		}
 		
@@ -261,17 +242,8 @@ abstract class Controller {
 					$actionmethod = $this->getRedirectUrlOnError($exception, $actionmethod);
 
 				} else {
-					
-					$actiontype = 'view';
-					$actionmethod = 'error';
-					$this->addViewerData('errormessage',$exception->getMessage());
-					$this->addViewerData('errornumber',$exception->getCode());
-					
-					if ($exception instanceof ViewException) {
-						$this->addViewerData('errorcode',$exception->getTextCode());
-					}
-					
-					$this->addViewerData('errortrace',$exception->getFile().' '.$exception->getLine().'; '.$exception->getTraceAsString());
+					list($actiontype,$actionmethod,$this->responseformat) = 
+						$this->router->setErrorPageForException($exception);
 				}
 			}			// do view again. it can be only in case of error and response format is not html
 			if ($actiontype == 'view') {
@@ -368,7 +340,7 @@ abstract class Controller {
 		}
 		if (empty($actionmethod) && !empty($this->redirectUrlInCaseOfError)) {
 			// use some default url
-			$actionmethod = $this->redirectUrlInCaseOfError;
+			$actionmethod = $this->redirectUrlInCaseOfError;	
 		}
 		if (empty($actionmethod) && !empty($this->viewInCaseOfError)) {
 			// it can be custom view. so redirect to it
@@ -494,23 +466,13 @@ abstract class Controller {
 		// if this was not reloaded in child class then it means view name is same as controller
 		return $this->application->getView($name,$this);
 	}
-	public function getViewerData() 
-	{
-		return $this->viewdata;
-	}
-	public function shiftViewerData() 
-	{
-		$data = $this->viewdata;
-		$this->viewdata = array();
-		return $data;
-	}
 	/**
     * Add some data to display with a viewer in an end of an action (without redirect)
     * This is useful for cases when non HTML response is used and controller must return somethign after an action
 	*/
 	public function addViewerData($name,$value) 
 	{
-		$this->viewdata[$name] = $value;
+		$this->router->addViewerData($name,$value);
 	}
 	
 	/**
