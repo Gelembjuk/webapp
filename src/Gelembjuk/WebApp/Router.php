@@ -23,10 +23,11 @@ class Router {
 		self::$phpsessioninited = false;
 		$this->application = $application;
 		$this->options = $options;
-		$this->httpmethod = $_SERVER['REQUEST_METHOD'];
+		$this->httpmethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 		$this->clearInput();
 		$this->parseInput();
 		$this->setUpActionInfo();
+		
 	}
 	/*
 	* Init router. Can be used in shild classes to do some action right after object created
@@ -198,7 +199,7 @@ class Router {
 			return null;
 		}
 		
-		$v = $this->input[$name];
+		$v = $this->input[$name] ?? '';
 		
 		if (empty($v)) {
 			$v = $default;
@@ -335,7 +336,7 @@ class Router {
 	}
 	protected function getRequestUrlPath()
 	{
-		return $_SERVER['REQUEST_URI'];
+		return $_SERVER['REQUEST_URI'] ?? '';
 	}
 
 	public function getRequestHostName()
@@ -376,7 +377,7 @@ class Router {
 	public function setErrorPageForException($exception) 
 	{
 		$code = 'error';
-
+		
 		if ($exception instanceof ViewException) {
 			$code = $exception->getTextCode();
 		}

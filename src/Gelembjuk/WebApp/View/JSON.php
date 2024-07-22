@@ -24,7 +24,7 @@ class JSON extends Display {
 			echo $this->preparedDisplayData;
 			return true;
 		}
-        if (is_array($this->options['cachedata'])) {
+        if (is_array($this->options['cachedata'] ?? null)) {
             if (!empty($this->options['cachedata'][1])) {
                 header($this->options['cachedata'][1]);
             }
@@ -38,10 +38,10 @@ class JSON extends Display {
 		
 		$responsecode = 200;
 	
-		if ($this->data['statuscode'] > 0) {
+		if (($this->data['statuscode'] ?? 0) > 0) {
 			$responsecode = $this->data['statuscode'];
 
-		} elseif ($this->data['errornumber'] > 0) {
+		} elseif (($this->data['errornumber'] ?? 0) > 0) {
 			$responsecode = $this->data['errornumber'];
 		}
 
@@ -56,10 +56,12 @@ class JSON extends Display {
 			header($htmlheader);
 		}
 		header('Content-Type: application/json; charset=utf-8');
+		
 		$output = json_encode($displaydata);
 		echo $output;
 		
 		$this->cacheData([$output, $htmlheader]);
+		
 		return true;
 	}
 	
@@ -98,7 +100,7 @@ class JSON extends Display {
 		} else {
 			$successmessage = 'Success';
 			
-			if ($this->data['successmessage'] != '') {
+			if (($this->data['successmessage'] ?? '') != '') {
 				$successmessage = $this->data['successmessage'];
 				unset($this->data['successmessage']);
 			}

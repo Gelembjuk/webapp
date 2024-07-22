@@ -133,6 +133,7 @@ class Application {
 		if (isset($this->options['defaultcontrollername'])) {
             $this->defaultcontrollername = $this->options['defaultcontrollername'];
         }
+		
 	}
 	protected function getAppNameSpace() 
 	{
@@ -551,7 +552,7 @@ class Application {
 	
 	public function getOption($name) 
 	{
-		return $this->options[$name];
+		return $this->options[$name] ?? '';
 	}
 	public function setErrorHandler($errorhandlerobject) 
 	{
@@ -687,8 +688,8 @@ class Application {
 		if (!class_exists($class)) {
 			$classspace = 'Classes\\';
 
-			if ($this->frontRouter) {
-				$classspace = $this->frontRouter->getClassesSubSpace();
+			if ($this->routerfront) {
+				$classspace = $this->routerfront->getClassesSubSpace();
 			}
 
 			$classspace = $this->getAppNameSpace() . $classspace;

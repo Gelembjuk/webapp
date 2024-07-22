@@ -132,6 +132,9 @@ abstract class Controller {
 				if( is_array($result) || $result instanceof Response\Response ) {
 
 					if (is_array($result)) {
+						while (count($result) < 4) {
+							$result[] = '';
+						}
 						list($actiontype,$actionmethod,$responseformat,$message) = $result;
 					} else {
 						list($actiontype,$actionmethod,$responseformat, $message) = $result->getActionInfo();
@@ -254,6 +257,7 @@ abstract class Controller {
 			if ($actiontype != 'redirect') {
 				// all work should be done already
 				$this->beforeEnd();
+
 				return true;
 			}
 			
