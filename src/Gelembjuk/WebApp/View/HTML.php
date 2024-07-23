@@ -7,7 +7,7 @@ class HTML extends Display {
 	public function init($options) {
         parent::init($options);
         
-        if (is_array($options['cachedata'])) {
+        if (is_array($options['cachedata'] ?? null)) {
             $this->options = $options;
             return true;
         }
@@ -105,14 +105,14 @@ class HTML extends Display {
 		}
 		
 		$this->data['view'] = $this->options['view'];
-		$this->data['controller'] = $this->options['controler'];
+		$this->data['controller'] = $this->options['controler'] ?? '';
 		
 		return true;
 	}
 	public function display() {
         $cache = true;
 
-        if (is_array($this->options['cachedata'])) {
+        if (is_array($this->options['cachedata'] ?? null)) {
             $html = $this->options['cachedata'][1];
             $this->options = array_merge($this->options, $this->options['cachedata'][0]);
             $cache = false;

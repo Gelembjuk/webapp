@@ -137,7 +137,7 @@ abstract class View {
         if ($this->responseformat == 'html') {
             // check if there is a message in a session. 
             // If yes then read and remove (removing is done inside a router)
-            if ($this->viewdata['message'] == '') {
+            if (empty(($this->viewdata['message'] ?? ''))) {
                 $this->viewdata['message'] = $this->getRouter()->getMessageFromSession();
             }
             
@@ -290,7 +290,7 @@ abstract class View {
 		// all options to init html display object
 		$displayoptions = array(
 			'tmpdir' => $this->options['tmproot'],
-			'templatingclass' => $this->options['templatingclass'],
+			'templatingclass' => $this->options['templatingclass'] ?? '',
 			'templatepath' => $templatepath,
 			'templatesoptions' => $this->options['htmltemplatesoptions'],
 			'template' => $this->htmltemplate,
