@@ -180,6 +180,8 @@ class Router {
 	}
 	protected function filterXss($value) 
 	{
+		// TODO 
+		return $value;
 		static $xssconvertor = null;
 		
 		if ($xssconvertor === null) {
@@ -192,7 +194,7 @@ class Router {
 	{
 		
 		if ($filter == 'file') {
-			if (isset($this->files[$name]) && $this->files[$name]['name'] != '') {
+			if (isset($this->files[$name]) && is_array($this->files[$name]) && ($this->files[$name]['name'] ?? '') != '') {
 				return $this->files[$name];
 			}
 			
@@ -232,6 +234,10 @@ class Router {
 				$v = array();
 			}
 		}
+		if (is_array($v) && $filter != 'array') {
+			// it is array but we need scalar value
+			$v = $default;
+		}
 		
 		if ($filter=='int' || $filter=='integer') {
 			$v = strval(intval($v));
@@ -245,7 +251,10 @@ class Router {
 			$v = preg_replace('!<.*?>!','',$v);
 		}
 		
-		if ($filter == 'noxss' || $filter == 'nohtml') {
+		if ($filter == 'nohtml') {
+			$v = strip_tags($v);
+		}
+		if ($filter == 'noxss') {
 			$v = $this->filterXss($v);
 		}
 		
