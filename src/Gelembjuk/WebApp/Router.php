@@ -222,6 +222,7 @@ class Router {
 		}
 				
 		if ($filter == 'array' && !is_array($v)) {
+			$v = $v ?? '';
 			// maybe it is json. then try to recode from json
 			if (substr($v,0,1) == '{' || substr($v,0,1) == '[') {
 				$vv = @json_decode($v,true);

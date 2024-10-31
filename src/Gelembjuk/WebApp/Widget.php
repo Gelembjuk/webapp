@@ -46,7 +46,7 @@ abstract class Widget extends AppClass {
     protected function getInput($key, $type = 'string', $default = null)
     {
         if ($this->router) {
-            return $this->router->getInput($key, $type);
+            return $this->router->getInput($key, $type, $default);
         }
         return $this->inputdata[$key] ?? $default;
     }
