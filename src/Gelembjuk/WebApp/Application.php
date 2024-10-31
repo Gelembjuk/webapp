@@ -538,6 +538,7 @@ class Application {
 
 		$object = new $classpath($this);
 		$object->init();
+		$object->withRouter($this->routerfront);
 		
 		return $object;
 
