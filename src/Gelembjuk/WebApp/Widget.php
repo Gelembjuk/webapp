@@ -45,10 +45,13 @@ abstract class Widget extends AppClass {
     }
     protected function getInput($key, $type = 'string', $default = null)
     {
+        if (isset($this->inputdata[$key])) {
+            return $this->inputdata[$key];
+        }
         if ($this->router) {
             return $this->router->getInput($key, $type, $default);
         }
-        return $this->inputdata[$key] ?? $default;
+        return $default;
     }
     protected function outputError($message)
     {
