@@ -165,6 +165,20 @@ class Router {
                 $this->input[$key] = $val;
 			}
 		}
+
+		foreach (array_slice($argv,1) as $arg) {
+			if (preg_match('!^--(.+)=(.+)$!', $arg, $m)) {
+				$this->input[$m[1]] = $m[2];
+			}
+		}
+	}
+	public function getCliScriptName()
+	{
+		global $argv;
+		if (!isset($argv[0])) {
+			return '';
+		}
+		return basename($argv[0] ?? '');
 	}
 	public function setInput($name,$value) 
 	{

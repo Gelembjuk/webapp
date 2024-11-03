@@ -335,6 +335,10 @@ abstract class View {
 	{
 		return $this->displayWithObject('\\Gelembjuk\\WebApp\\View\\JSONDATA','jsondatadisplayclass');
 	}
+	protected function displayRAW() 
+	{
+		return $this->displayWithObject('\\Gelembjuk\\WebApp\\View\\Raw','rawdisplayclass');
+	}
 	protected function displayXML() 
 	{
 		return $this->displayWithObject('\\Gelembjuk\\WebApp\\View\\XML','xmldisplayclass');
